@@ -1,0 +1,1 @@
+/* The assetModel defines the data structure for assets */

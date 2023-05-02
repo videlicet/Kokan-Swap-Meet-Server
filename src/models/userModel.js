@@ -1,0 +1,1 @@
+/* The userModel defines the data structure for users */
