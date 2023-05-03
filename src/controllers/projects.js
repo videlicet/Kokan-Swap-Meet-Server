@@ -1,4 +1,4 @@
-import ErrorResponse from '../utils/ErrorResponse.js';
+import ErrorResponse from "../utils/ErrorResponse.js";
 
 /*
 export const getProducts = async (req, res, next) => {
