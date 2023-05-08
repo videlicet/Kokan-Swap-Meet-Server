@@ -3,20 +3,19 @@
     "target": "es2016",                                 /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "module": "ESNext",                                 /* Specify what module code is generated. */
     "rootDir": "src",                                   /* Specify the root folder within your source files. */  
-    //"outDir": "dist",                                   /* Specify an output folder for all emitted files. */
-    
+    "outDir": "dist",                                   /* Specify an output folder for all emitted files. */
+    "skipLibCheck": true,                               /* Skip type checking .d.ts files that are included with TypeScript. */
+
     /* Modules */
     "esModuleInterop": true,                            /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
     "forceConsistentCasingInFileNames": true,           /* Ensure that casing is correct in imports. */
-    "noEmit": true,                                     /* Disable emitting files from a compilation. */
-    "allowImportingTsExtensions": true,                 /* Allow imports to include TypeScript file extensions. Requires '--moduleResolution bundler' and either '--noEmit' or '--emitDeclarationOnly' to be set. */
     "moduleResolution": "node",                         /* Specify how TypeScript looks up a file from a given module specifier. */
     "sourceMap": true,                                  /* Create source map files for emitted JavaScript files. */
 
     /* Linting */
     "strict": false,                                     /* Enable all strict type-checking options. */
-    "noUnusedLocals": false,                              /* Enable error reporting when local variables aren't read. */
-    "noUnusedParameters": false,                          /* Raise an error when a function parameter isn't read. */
-    "noFallthroughCasesInSwitch": false,                  /* Enable error reporting for fallthrough cases in switch statements. */
+    "noUnusedLocals": false,                             /* Enable error reporting when local variables aren't read. */
+    "noUnusedParameters": false,                         /* Raise an error when a function parameter isn't read. */
+    "noFallthroughCasesInSwitch": false,                 /* Enable error reporting for fallthrough cases in switch statements. */
   },
 }

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import DB_URL from '../DB_URL.js' // when hosting locally
-import User from '../models/userModel.ts'
+import User from '../models/userModel.js'
 
 mongoose.connect(DB_URL) // when hosting locally
 // mongoose.connect(process.env.DB_URL) // when hosting on the web
@@ -32,7 +32,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 export const getUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    const user = await User.find({}).exec() //specify what to search fo
+    const user = await User.findOne({username: req.body.username}).exec()
     res.status(200).json(user)
   } catch (error) {
     next(error)
@@ -42,8 +42,9 @@ export const getUser = async (req: Request, res: Response, next: NextFunction) =
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    await User.updateMany() // not update Many, how to decide what to update? just all of it?
-    const updatedUser = await User.find({}).exec()
+    const searchCriterion = { username: req.body.username }
+    await User.updateOne(searchCriterion, req.body)
+    const updatedUser = await User.find(searchCriterion).exec()
     return res.status(200).json(updatedUser)
   } catch (error) {
     next(error)
@@ -52,9 +53,9 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 
 export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('DELETE to DATABSE')
+    console.log('DELETE to DATABASE')
     console.log(req.body)
-    const deletedUser = await User.deleteMany({}) // delete ONE
+    const deletedUser = await User.deleteOne({ username: req.body.username }) 
     return res.status(201).json(deletedUser) // QQ 201?
   } catch (error) {
     next(error)

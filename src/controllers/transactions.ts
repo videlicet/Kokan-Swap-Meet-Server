@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import DB_URL from '../DB_URL.js' // when hosting locally
-import Transaction from '../models/transactionModel.ts'
+import Transaction from '../models/transactionModel.js'
 
 mongoose.connect(DB_URL) // when hosting locally
 // mongoose.connect(process.env.DB_URL) // when hosting on the web
@@ -32,7 +32,7 @@ export const createTransaction = async (req: Request, res: Response, next: NextF
 export const getTransaction = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    const transaction = await Transaction.find({}).exec() //specify what to search fo
+    const transaction = await Transaction.findOne({ transaction_id: req.body.transaction_id }).exec() //specify what to search fo
     res.status(200).json(transaction)
   } catch (error) {
     next(error)
@@ -42,8 +42,9 @@ export const getTransaction = async (req: Request, res: Response, next: NextFunc
 export const updateTransaction = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    await Transaction.updateMany() // not update Many, how to decide what to update? just all of it?
-    const updatedTransaction = await Transaction.find({}).exec()
+    const searchCriterion = { username: req.body.username }
+    await Transaction.updateOne(searchCriterion, req.body)
+    const updatedTransaction = await Transaction.find(searchCriterion).exec()
     return res.status(200).json(updatedTransaction)
   } catch (error) {
     next(error)
@@ -52,9 +53,9 @@ export const updateTransaction = async (req: Request, res: Response, next: NextF
 
 export const deleteTransaction = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('DELETE to DATABSE')
+    console.log('DELETE to DATABASE')
     console.log(req.body)
-    const deletedTransaction = await Transaction.deleteMany({}) //delete ONE
+    const deletedTransaction = await Transaction.deleteOne({})
     return res.status(201).json(deletedTransaction) // QQ 201?
   } catch (error) {
     next(error)

@@ -2,10 +2,10 @@ import express, { Express, Request, Response } from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
 
-import assetsRouter from './routes/assetsRouter.ts'
-import transactionsRouter from './routes/transactionsRouter.ts'
-import usersRouter from './routes/usersRouter.ts'
-import errorHandler from './middlewares/errorHandler.ts'
+import assetsRouter from './routes/assetsRouter.js'
+import transactionsRouter from './routes/transactionsRouter.js'
+import usersRouter from './routes/usersRouter.js'
+import errorHandler from './middlewares/errorHandler.js'
 
 import DB_URL from './DB_URL.js'
 

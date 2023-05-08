@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Request, Response, NextFunction } from 'express'
 import DB_URL from '../DB_URL.js'; // when hosting locally
-import Asset from '../models/assetModel.ts';
+import Asset from '../models/assetModel.js';
 
 mongoose.connect(DB_URL) // when hosting locally
 // mongoose.connect(process.env.DB_URL) // when hosting on the web
@@ -32,7 +32,7 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 export const getAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    const asset = await Asset.find({}).exec() //specify what to search fo
+    const asset = await Asset.find({ asset_id: req.body.asset_id }).exec() //specify what to search fo
     res.status(200).json(asset)
   } catch (error) {
     next(error)
@@ -42,8 +42,9 @@ export const getAsset = async (req: Request, res: Response, next: NextFunction) 
 export const updateAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    await Asset.updateMany() // not update Many, how to decide what to update? just all of it?
-    const updatedAsset = await Asset.find({}).exec()
+    const searchCriterion = { asset_id: req.body.asset_id }
+    await Asset.updateOne(searchCriterion, req.body)
+    const updatedAsset = await Asset.find(searchCriterion).exec()
     return res.status(200).json(updatedAsset)
   } catch (error) {
     next(error)
@@ -52,9 +53,9 @@ export const updateAsset = async (req: Request, res: Response, next: NextFunctio
 
 export const deleteAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('DELETE to DATABSE')
+    console.log('DELETE to DATABASE')
     console.log(req.body)
-    const deletedAsset = await Asset.deleteMany({}) //delete ONE
+    const deletedAsset = await Asset.deleteOne({ asset_id: req.body.asset_id })
     return res.status(201).json(deletedAsset) // QQ 201?
   } catch (error) {
     next(error)
