@@ -25,3 +25,6 @@ dist-ssr
 
 # Clean History
 bfg-1.14.0.jar
+
+# DB
+DB_URL.js
