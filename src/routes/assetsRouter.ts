@@ -1,15 +1,15 @@
-import { Router } from 'express';
-import {  getAssets, createAsset, getAsset, updateAsset, deleteAsset } from '../controllers/assets.ts';
+import { Router } from 'express'
+import {  getAssets, createAsset, getAsset, updateAsset, deleteAsset } from '../controllers/assets.ts'
 
-const assetsRouter = Router();
+const assetsRouter = Router()
 
 assetsRouter.route('/')
     .get(getAssets)
-    .post(createAsset);
+    .post(createAsset)
 
 assetsRouter.route('/:id')
     .get(getAsset)
     .put(updateAsset)
-    .delete(deleteAsset);
+    .delete(deleteAsset)
 
-export default assetsRouter;
+export default assetsRouter

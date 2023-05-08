@@ -1,15 +1,15 @@
 import { Router } from 'express';
-import { getTransactions, createTransaction, getTransaction, updateTransaction, deleteTransaction} from '../controllers/transactions.ts';
+import { getTransactions, createTransaction, getTransaction, updateTransaction, deleteTransaction} from '../controllers/transactions.ts'
 
 const transactionsRouter = Router();
 
 transactionsRouter.route('/')
     .get(getTransactions)
-    .post(createTransaction);
+    .post(createTransaction)
 
 transactionsRouter.route('/:id')
     .get(getTransaction)
     .put(updateTransaction)
-    .delete(deleteTransaction);
+    .delete(deleteTransaction)
 
-export default transactionsRouter;
+export default transactionsRouter

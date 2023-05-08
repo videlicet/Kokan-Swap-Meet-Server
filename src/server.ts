@@ -1,17 +1,18 @@
 import express, { Express, Request, Response } from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
-//import { getMenus } from './content_model.js';
 
 import assetsRouter from './routes/assetsRouter.ts'
+import transactionsRouter from './routes/transactionsRouter.ts'
 import usersRouter from './routes/usersRouter.ts'
 import errorHandler from './middlewares/errorHandler.ts'
 
-import DB_URL from './DB_URL.ts'
+import DB_URL from './DB_URL.js'
 
 const app: Express = express()
-const port = process.env.PORT || 3001
+const port = process.env.PORT || 3532
 
+console.log(process.env.PORT)
 
 /* this might not be needed here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 mongoose.connect(DB_URL) // when hosting locally
@@ -22,6 +23,7 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 app.use(cors<Request>())
 app.use(express.json())
 app.use('/assets', assetsRouter)
+app.use('/transactions', transactionsRouter)
 app.use('/users', usersRouter)
 app.use(errorHandler)
 

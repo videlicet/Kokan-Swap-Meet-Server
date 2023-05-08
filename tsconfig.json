@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "es2016",                                 /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "module": "ESNext",                                 /* Specify what module code is generated. */
-    "rootDir": "src",                                   /* Specify the root folder within your source files. */
-    "outDir": "dist",                                   /* Specify an output folder for all emitted files. */
+    "rootDir": "src",                                   /* Specify the root folder within your source files. */  
+    //"outDir": "dist",                                   /* Specify an output folder for all emitted files. */
     
     /* Modules */
     "esModuleInterop": true,                            /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
@@ -14,6 +14,9 @@
     "sourceMap": true,                                  /* Create source map files for emitted JavaScript files. */
 
     /* Linting */
-    "strict": true,                                     /* Enable all strict type-checking options. */
-  }
+    "strict": false,                                     /* Enable all strict type-checking options. */
+    "noUnusedLocals": false,                              /* Enable error reporting when local variables aren't read. */
+    "noUnusedParameters": false,                          /* Raise an error when a function parameter isn't read. */
+    "noFallthroughCasesInSwitch": false,                  /* Enable error reporting for fallthrough cases in switch statements. */
+  },
 }

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { Request, Response, NextFunction } from 'express'
 import DB_URL from '../DB_URL.js' // when hosting locally
 import User from '../models/userModel.ts'
 
@@ -7,7 +8,7 @@ mongoose.connect(DB_URL) // when hosting locally
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const getUsers = async (req, res, next) => {
+export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
     const users = await User.find({}).exec()
@@ -17,7 +18,7 @@ export const getUsers = async (req, res, next) => {
   }
 }
 
-export const createUser = async (req, res, next) => {
+export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('POST to DATABASE')
     const newUser = new User(req.body)
@@ -28,7 +29,7 @@ export const createUser = async (req, res, next) => {
   }
 }
 
-export const getUser = async (req, res, next) => {
+export const getUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
     const user = await User.find({}).exec() //specify what to search fo
@@ -38,10 +39,10 @@ export const getUser = async (req, res, next) => {
   }
 }
 
-export const updateUser = async (req, res, next) => {
+export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    await User.updateMany({ name: 'Awesome Post!' }, 'John') // not update Many, how to decide what to update? just all of it?
+    await User.updateMany() // not update Many, how to decide what to update? just all of it?
     const updatedUser = await User.find({}).exec()
     return res.status(200).json(updatedUser)
   } catch (error) {
@@ -49,7 +50,7 @@ export const updateUser = async (req, res, next) => {
   }
 }
 
-export const deleteUser = async (req, res, next) => {
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('DELETE to DATABSE')
     console.log(req.body)

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { Request, Response, NextFunction } from 'express'
 import DB_URL from '../DB_URL.js'; // when hosting locally
 import Asset from '../models/assetModel.ts';
 
@@ -7,7 +8,7 @@ mongoose.connect(DB_URL) // when hosting locally
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const getAssets = async (req, res, next) => {
+export const getAssets = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
     const users = await Asset.find({}).exec()
@@ -17,7 +18,7 @@ export const getAssets = async (req, res, next) => {
   }
 }
 
-export const createAsset = async (req, res, next) => {
+export const createAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('POST to DATABASE')
     const newAsset = new Asset(req.body)
@@ -28,7 +29,7 @@ export const createAsset = async (req, res, next) => {
   }
 }
 
-export const getAsset = async (req, res, next) => {
+export const getAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
     const asset = await Asset.find({}).exec() //specify what to search fo
@@ -38,10 +39,10 @@ export const getAsset = async (req, res, next) => {
   }
 }
 
-export const updateAsset = async (req, res, next) => {
+export const updateAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    await Asset.updateMany({ name: 'Awesome Post!' }, 'John') // not update Many, how to decide what to update? just all of it?
+    await Asset.updateMany() // not update Many, how to decide what to update? just all of it?
     const updatedAsset = await Asset.find({}).exec()
     return res.status(200).json(updatedAsset)
   } catch (error) {
@@ -49,7 +50,7 @@ export const updateAsset = async (req, res, next) => {
   }
 }
 
-export const deleteAsset = async (req, res, next) => {
+export const deleteAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('DELETE to DATABSE')
     console.log(req.body)

@@ -1,7 +1,9 @@
 /* For more on Error Handling, visit https://expressjs.com/en/guide/error-handling.html please be aware errors in synchronous and asynchronous code has to be 
 dealt with differently */
 
-const errorHandler = (err, req, res, next) => {
+import { ErrorRequestHandler , Request, Response, NextFunction } from 'express'
+
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   // log err.stack only on non-production environments
   if (process.env.NODE_ENV !== 'production') {
     console.error(err.stack);
