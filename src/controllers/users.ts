@@ -1,8 +1,10 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 import DB_URL from '../DB_URL.js' // when hosting locally
+import SECRET_KEY from '../SECRET_KEY.js'
 import User from '../models/userModel.js'
 
 mongoose.connect(DB_URL) // when hosting locally
