@@ -1,5 +1,7 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
+import bcrypt from 'bcrypt'
+
 import DB_URL from '../DB_URL.js' // when hosting locally
 import User from '../models/userModel.js'
 
@@ -21,7 +23,12 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('POST to DATABASE')
-    const newUser = new User(req.body)
+    let password = await bcrypt.hash(req.body.password, 10);
+    const newUser = new User({
+      username: req.body.username,
+      password: password,
+      email: req.body.email,
+    });
     await newUser.save()
     return res.status(201).json(newUser)
   } catch (error) {

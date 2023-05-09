@@ -32,7 +32,7 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 export const getAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    const asset = await Asset.find({ asset_id: req.body.asset_id }).exec() //specify what to search fo
+    const asset = await Asset.find({ asset_id: req.params.id }).exec()
     res.status(200).json(asset)
   } catch (error) {
     next(error)

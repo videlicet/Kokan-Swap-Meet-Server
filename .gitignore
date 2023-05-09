@@ -27,4 +27,5 @@ dist-ssr
 bfg-1.14.0.jar
 
 # DB
-DB_URL.js
+DB_URL.ts
+SECRET_KEY.ts
