@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import { login } from '../controllers/login.js'
+import { login, auth } from '../controllers/login.js'
 
 const loginRouter = Router()
 
 loginRouter.route('/')
-    .get()
+    .get(auth)
     .post(login)
 
 export default loginRouter

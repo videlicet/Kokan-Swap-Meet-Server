@@ -1,21 +1,24 @@
 /* The assetModel defines the data structure for assets */
 
-import mongoose from 'mongoose';
-const { Schema, model } = mongoose;
+import mongoose from 'mongoose'
+const { Schema, model } = mongoose
 
-const assetSchema = new Schema({
-	asset_id: Number,
-	name: String,
-	kokans: Number,
-	creator: String,
-	created: String,
-	owners: [String], // QQ how to indicate type?
-	type: [String], // QQ how to indicate type?
-	description_short: String,
-	description_long: String,
-	licence: String
-}, { collection: 'Assets' });
+const assetSchema = new Schema(
+  {
+    asset_id: Number,
+    name: String,
+    kokans: Number,
+    creator: String,
+    created: String,
+    owners: [String], // QQ how to indicate type?
+    type: [String], // QQ how to indicate type?
+    description_short: String,
+    description_long: String,
+    licence: String,
+  },
+  { collection: 'Assets' },
+)
 
-const Asset = model('Asset', assetSchema);
+const Asset = model('Asset', assetSchema)
 
-export default Asset;
+export default Asset
