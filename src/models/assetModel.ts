@@ -6,7 +6,7 @@ const { Schema, model } = mongoose
 const assetSchema = new Schema(
   {
     asset_id: Number,
-    name: String,
+    title: String,
     kokans: Number,
     creator: String,
     created: String,
@@ -14,6 +14,7 @@ const assetSchema = new Schema(
     type: [String], // QQ how to indicate type?
     description_short: String,
     description_long: String,
+    // TD tag?
     licence: String,
   },
   { collection: 'Assets' },
