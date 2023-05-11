@@ -12,7 +12,7 @@ export const getAssets = async (req: Request, res: Response, next: NextFunction)
   try {
     console.log('GET to DATABASE')
     const users = await Asset.find({}).exec()
-    res.status(200).json(users)
+    return res.status(200).json(users)
   } catch (error) {
     next(error)
   }
@@ -32,8 +32,9 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 export const getAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    const asset = await Asset.find({ asset_id: req.params.id }).exec()
-    res.status(200).json(asset)
+    const asset = await Asset.findOne({ _id: req.body.asset._id }).exec() // or _id: req.params.id if get this route
+    console.log(asset)
+    return res.status(200).json(asset)
   } catch (error) {
     next(error)
   }
@@ -45,7 +46,7 @@ export const updateAsset = async (req: Request, res: Response, next: NextFunctio
     const searchCriterion = { asset_id: req.body.asset_id }
     await Asset.updateOne(searchCriterion, req.body)
     const updatedAsset = await Asset.find(searchCriterion).exec()
-    return res.status(200).json(updatedAsset)
+    return res.status(200).json('Update successfull')
   } catch (error) {
     next(error)
   }
@@ -55,8 +56,8 @@ export const deleteAsset = async (req: Request, res: Response, next: NextFunctio
   try {
     console.log('DELETE to DATABASE')
     console.log(req.body)
-    const deletedAsset = await Asset.deleteOne({ asset_id: req.body.asset_id })
-    return res.status(201).json(deletedAsset) // QQ 201?
+    const deletedAsset = await Asset.deleteOne({ _id: req.body.asset._id })
+    return res.status(200).send('Delete successfull') // QQ 201?
   } catch (error) {
     next(error)
   }

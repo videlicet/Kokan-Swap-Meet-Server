@@ -8,7 +8,7 @@ assetsRouter.route('/')
     .post(createAsset)
 
 assetsRouter.route('/:id')
-    .get(getAsset)
+    .post(getAsset)
     .put(updateAsset)
     .delete(deleteAsset)
 

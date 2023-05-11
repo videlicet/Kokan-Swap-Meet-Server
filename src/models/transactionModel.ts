@@ -5,12 +5,10 @@ const { Schema, model } = mongoose
 
 const transactionSchema = new Schema(
   {
-    request_id: Number,
-    asset_id: Number,
+    asset_id: String,
     requester: String, // for testing, should be number
     requestee: String, // for testing, should be number
-    request_created: String,
-    owners: [String], // QQ how to indicate type here?
+    created: String,
     status: String, // 'pending', 'declined', 'accepted'
   },
   { collection: 'Transactions' },

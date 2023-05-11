@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, createUser, getUser, updateUser, deleteUser, getUserAssets } from '../controllers/users.js'
+import { getUsers, createUser, getUser, updateUser, deleteUser, getUserAssets, getUserRequests } from '../controllers/users.js'
 
 const usersRouter = Router()
 
@@ -8,11 +8,14 @@ usersRouter.route('/')
     .post(createUser)
 
 usersRouter.route('/:id')
-    .get(getUser)
+    .post(getUser)
     .put(updateUser)
     .delete(deleteUser)
 
 usersRouter.route('/:id/assets')
     .post(getUserAssets)
+
+usersRouter.route('/:id/requests')
+    .post(getUserRequests)
 
 export default usersRouter

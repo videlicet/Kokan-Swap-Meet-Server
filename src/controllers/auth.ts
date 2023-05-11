@@ -95,15 +95,7 @@ export const logoutUser = async (
 ) => {
   console.log('SET EXPIRED COOKIE')
   try {
-    // create a response cookie
-    const options = {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-      maxAge: 1000,
-    }
-    res.set('Access-Control-Allow-Origin', 'http://localhost:5173') // this is necessarry because it means that the server allows cookies to be included in cross-origin requests
-    res.status(201).cookie('token', 'deleted', options).send('success')
+    res.clearCookie('token', {path: "/", sameSite: 'none', secure: true}).sendStatus(200)
   } catch (error) {
     return res
       .status(500)

@@ -4,7 +4,8 @@ import bcrypt from 'bcrypt'
 
 import DB_URL from '../DB_URL.js' // when hosting locally
 import User from '../models/userModel.js'
-import Asset from '../models/assetModel.js';
+import Asset from '../models/assetModel.js'
+import Transaction from '../models/transactionModel.js'
 
 mongoose.connect(DB_URL) // when hosting locally
 // mongoose.connect(process.env.DB_URL) // when hosting on the web
@@ -57,7 +58,7 @@ export const getUser = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    const user = await User.findOne({ username: req.body.username }).exec()
+    const user = await User.findOne({ _id: req.body.user._id }).exec()
     res.status(200).json(user)
   } catch (error) {
     next(error)
@@ -104,6 +105,30 @@ export const getUserAssets = async (
     console.log('GET to DATABASE')
     console.log(req.body)
     const asset = await Asset.find({ owners: req.body.owner }).exec()
+    res.status(200).json(asset)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getUserRequests = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    console.log('GET to DATABASE')
+    console.log(req.body)
+    let asset: any;
+    if (req.body.query === "requestee") {
+      asset = await Transaction.find({
+      requestee: req.body.user._id,
+    }).exec()}
+    else if (req.body.query === "requester") {
+      asset = await Transaction.find({
+        requester: req.body.user._id,
+      }).exec()
+    }
     console.log(asset)
     res.status(200).json(asset)
   } catch (error) {

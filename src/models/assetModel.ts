@@ -10,8 +10,9 @@ const assetSchema = new Schema(
     kokans: Number,
     creator: String,
     created: String,
-    owners: [String], // QQ how to indicate type?
-    type: [String], // QQ how to indicate type?
+    owners: [String],
+    type: [String],
+    broker: String,
     description_short: String,
     description_long: String,
     // TD tag?

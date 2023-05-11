@@ -21,7 +21,7 @@ export const getTransactions = async (req: Request, res: Response, next: NextFun
 export const createTransaction = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('POST to DATABASE')
-    const newTransaction = new Transaction(req.body)
+    const newTransaction = new Transaction(req.body.transaction)
     await newTransaction.save()
     return res.status(201).json(newTransaction)
   } catch (error) {
