@@ -5,7 +5,7 @@ const { Schema, model } = mongoose
 
 const assetSchema = new Schema(
   {
-    asset_id: Number,
+    asset_id: String,
     title: String,
     kokans: Number,
     creator: String,

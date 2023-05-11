@@ -8,7 +8,11 @@ mongoose.connect(DB_URL) // when hosting locally
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const getTransactions = async (req: Request, res: Response, next: NextFunction) => {
+export const getTransactions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('GET to DATABASE')
     const users = await Transaction.find({}).exec()
@@ -18,7 +22,11 @@ export const getTransactions = async (req: Request, res: Response, next: NextFun
   }
 }
 
-export const createTransaction = async (req: Request, res: Response, next: NextFunction) => {
+export const createTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('POST to DATABASE')
     const newTransaction = new Transaction(req.body.transaction)
@@ -29,21 +37,31 @@ export const createTransaction = async (req: Request, res: Response, next: NextF
   }
 }
 
-export const getTransaction = async (req: Request, res: Response, next: NextFunction) => {
+export const getTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('GET to DATABASE')
-    const transaction = await Transaction.findOne({ transaction_id: req.body.transaction_id }).exec() //specify what to search fo
+    const transaction = await Transaction.findOne({
+      transaction_id: req.body.transaction_id,
+    }).exec() //specify what to search fo
     res.status(200).json(transaction)
   } catch (error) {
     next(error)
   }
 }
 
-export const updateTransaction = async (req: Request, res: Response, next: NextFunction) => {
+export const updateTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('PUT to DATABASE')
-    const searchCriterion = { username: req.body.username }
-    await Transaction.updateOne(searchCriterion, req.body)
+    const searchCriterion = { _id: req.params.id }
+    await Transaction.updateOne(searchCriterion, req.body.transaction)
     const updatedTransaction = await Transaction.find(searchCriterion).exec()
     return res.status(200).json(updatedTransaction)
   } catch (error) {
@@ -51,12 +69,19 @@ export const updateTransaction = async (req: Request, res: Response, next: NextF
   }
 }
 
-export const deleteTransaction = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('DELETE to DATABASE')
-    console.log(req.body)
-    const deletedTransaction = await Transaction.deleteOne({})
-    return res.status(201).json(deletedTransaction) // QQ 201?
+    console.log(req.params.id)
+    const deletedTransaction = await Transaction.deleteOne({
+      _id: req.params.id,
+    })
+    console.log(deletedTransaction)
+    return res.status(200).json(deletedTransaction) // QQ 201?
   } catch (error) {
     next(error)
   }

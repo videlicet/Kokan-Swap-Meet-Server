@@ -32,8 +32,7 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 export const getAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    const asset = await Asset.findOne({ _id: req.body.asset._id }).exec() // or _id: req.params.id if get this route
-    console.log(asset)
+    const asset = await Asset.findOne({ _id: req.body.asset._id }).exec()
     return res.status(200).json(asset)
   } catch (error) {
     next(error)
@@ -43,8 +42,9 @@ export const getAsset = async (req: Request, res: Response, next: NextFunction) 
 export const updateAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    const searchCriterion = { asset_id: req.body.asset_id }
-    await Asset.updateOne(searchCriterion, req.body)
+    console.log(req.body.update)
+    const searchCriterion = { _id: req.body.asset.asset_id }
+    await Asset.updateOne(searchCriterion, req.body.update)
     const updatedAsset = await Asset.find(searchCriterion).exec()
     return res.status(200).json('Update successfull')
   } catch (error) {
