@@ -42,7 +42,6 @@ export const getAsset = async (req: Request, res: Response, next: NextFunction) 
 export const updateAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('PUT to DATABASE')
-    console.log(req.body.update)
     const searchCriterion = { _id: req.body.asset.asset_id }
     await Asset.updateOne(searchCriterion, req.body.update)
     const updatedAsset = await Asset.find(searchCriterion).exec()

@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { getTransactions, createTransaction, getTransaction, updateTransaction, deleteTransaction} from '../controllers/transactions.js'
+import { getTransactions, createTransaction, deleteTransactions, getTransaction, updateTransaction, deleteTransaction} from '../controllers/transactions.js'
 
 const transactionsRouter = Router();
 
 transactionsRouter.route('/')
     .get(getTransactions)
     .post(createTransaction)
+    .delete(deleteTransactions)
 
 transactionsRouter.route('/:id')
     .get(getTransaction)

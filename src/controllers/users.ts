@@ -73,7 +73,6 @@ export const updateUser = async (
   try {
     console.log('PUT to DATABASE')
     const searchCriterion = { _id: req.body.user._id } //TD find out where this is uses that way and make it dynamic so that the frontend can pass sth like {body: {user: { _id: props.requestProps.requestee }}}
-    console.log(searchCriterion)
     await User.updateOne(searchCriterion, req.body.update)
     const updatedUser = await User.find(searchCriterion).exec()
     return res.status(200).json(updatedUser)
@@ -89,7 +88,6 @@ export const deleteUser = async (
 ) => {
   try {
     console.log('DELETE to DATABASE')
-    console.log(req.body)
     const deletedUser = await User.deleteOne({ username: req.body.username })
     return res.status(201).json(deletedUser) // QQ 201?
   } catch (error) {
@@ -104,7 +102,6 @@ export const getUserAssets = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    console.log(req.body)
     const asset = await Asset.find({ owners: req.body.owner }).exec()
     res.status(200).json(asset)
   } catch (error) {
@@ -119,7 +116,6 @@ export const getUserRequests = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    console.log(req.body)
     let asset: any;
     if (req.body.query === "requestee") {
       asset = await Transaction.find({
@@ -130,7 +126,6 @@ export const getUserRequests = async (
         requester: req.body.user._id,
       }).exec()
     }
-    console.log(asset)
     res.status(200).json(asset)
   } catch (error) {
     next(error)

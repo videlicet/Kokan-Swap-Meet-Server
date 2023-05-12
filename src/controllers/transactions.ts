@@ -37,6 +37,22 @@ export const createTransaction = async (
   }
 }
 
+export const deleteTransactions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    console.log('DELETE to DATABASE')
+    const deletedTransaction = await Transaction.deleteMany({
+      asset_id: req.body.asset._id,
+    })
+    return res.status(200).json(deletedTransaction) // QQ 201?
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const getTransaction = async (
   req: Request,
   res: Response,
@@ -76,13 +92,12 @@ export const deleteTransaction = async (
 ) => {
   try {
     console.log('DELETE to DATABASE')
-    console.log(req.params.id)
     const deletedTransaction = await Transaction.deleteOne({
       _id: req.params.id,
     })
-    console.log(deletedTransaction)
     return res.status(200).json(deletedTransaction) // QQ 201?
   } catch (error) {
     next(error)
   }
 }
+
