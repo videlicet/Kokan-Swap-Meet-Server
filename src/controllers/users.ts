@@ -59,7 +59,11 @@ export const getUser = async (
   try {
     console.log('GET to DATABASE')
     const user = await User.findOne({ _id: req.body.user._id }).exec()
-    res.status(200).json(user)
+    if (user) {
+      return res.status(200).json(user)
+    } else {
+      return res.status(404).json(user)
+    }
   } catch (error) {
     next(error)
   }
@@ -88,8 +92,18 @@ export const deleteUser = async (
 ) => {
   try {
     console.log('DELETE to DATABASE')
-    const deletedUser = await User.deleteOne({ username: req.body.username })
-    return res.status(201).json(deletedUser) // QQ 201?
+    console.log(req.body)
+    /* delete corresponding transcations */
+    const deletedTransactionsRequestee = await Transaction.deleteMany({ requestee: req.body.user._id })
+    const deletedTransactionsRequester = await Transaction.deleteMany({ requester: req.body.user._id })
+    
+    /* delete/update corresponidng assets */
+    const deletedAssets = await Asset.deleteMany({ owners: [req.body.user._id] })
+    const updatedAssets = await Asset.updateMany({ owners: req.body.user._id }, { $pull: { owners: req.body.user._id } } )
+
+    /* delete user */
+    const deletedUser = await User.deleteOne({ _id: req.body.user._id })
+    return res.status(200).json(deletedUser)
   } catch (error) {
     next(error)
   }
