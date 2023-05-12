@@ -72,8 +72,9 @@ export const updateUser = async (
 ) => {
   try {
     console.log('PUT to DATABASE')
-    const searchCriterion = { username: req.body.username }
-    await User.updateOne(searchCriterion, req.body)
+    const searchCriterion = { _id: req.body.user._id } //TD find out where this is uses that way and make it dynamic so that the frontend can pass sth like {body: {user: { _id: props.requestProps.requestee }}}
+    console.log(searchCriterion)
+    await User.updateOne(searchCriterion, req.body.update)
     const updatedUser = await User.find(searchCriterion).exec()
     return res.status(200).json(updatedUser)
   } catch (error) {

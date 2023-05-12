@@ -40,16 +40,3 @@ app.use(errorHandler)
 app.listen(port, () => {
   console.log(`Server is running on port ${port}.`)
 })
-
-
-/**
- * 
-import DB_URL from './DB_URL.js'
-
-//this might not be needed here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-mongoose.connect(DB_URL) // when hosting locally
-// mongoose.connect(process.env.DB_URL) // when hosting on the web
-const db = mongoose.connection
-db.on('error', console.error.bind(console, 'MongoDB connection error:'))
- 
-*/
