@@ -12,7 +12,6 @@ const assetSchema = new Schema(
     created: String,
     owners: [String],
     type: [String],
-    broker: String,
     description_short: String,
     description_long: String,
     // TD tag?

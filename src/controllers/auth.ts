@@ -76,9 +76,7 @@ export const authenticateUser = async (
       if (!user) {
         return res.status(404).json({ message: 'User not found.' })
       }
-      res
-        .status(200)
-        .json({ success: true, message: 'Authentication succeeded' })
+      res.status(200).json(user)
     })
   } else {
     res.status(403).json({
@@ -95,7 +93,9 @@ export const logoutUser = async (
 ) => {
   console.log('SET EXPIRED COOKIE')
   try {
-    res.clearCookie('token', {path: "/", sameSite: 'none', secure: true}).sendStatus(200)
+    res
+      .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
+      .sendStatus(200)
   } catch (error) {
     return res
       .status(500)
