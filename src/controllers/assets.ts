@@ -61,3 +61,20 @@ export const deleteAsset = async (req: Request, res: Response, next: NextFunctio
     next(error)
   }
 }
+
+export const getSearchedAssets = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    console.log('GET to DATABASE')
+    console.log(req.body.asset)
+    let assets = await Asset
+      .find({ $or: [
+        {title: { "$regex": req.body.asset.searchTerm, "$options": "i" }}, 
+        {description_short: { "$regex": req.body.asset.searchTerm, "$options": "i" }}, 
+        {description_long: { "$regex": req.body.asset.searchTerm, "$options": "i" }}
+      ]})
+      .exec()
+    return res.status(200).json(assets)
+  } catch (error) {
+    next(error)
+  }
+}
