@@ -11,6 +11,7 @@ const assetSchema = new Schema(
     creator: String,
     created: String,
     owners: [String],
+    onOffer: Boolean,
     type: [String],
     description_short: String,
     description_long: String,

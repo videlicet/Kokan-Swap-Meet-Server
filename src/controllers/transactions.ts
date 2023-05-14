@@ -15,8 +15,8 @@ export const getTransactions = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    const users = await Transaction.find({}).exec()
-    res.status(200).json(users)
+    const transactions = await Transaction.find({}).exec()
+    res.status(200).json(transactions)
   } catch (error) {
     next(error)
   }
@@ -47,7 +47,7 @@ export const deleteTransactions = async (
     const deletedTransaction = await Transaction.deleteMany({
       asset_id: req.body.asset._id,
     })
-    return res.status(200).json(deletedTransaction) // QQ 201?
+    return res.status(200).json(deletedTransaction)
   } catch (error) {
     next(error)
   }
@@ -95,7 +95,7 @@ export const deleteTransaction = async (
     const deletedTransaction = await Transaction.deleteOne({
       _id: req.params.id,
     })
-    return res.status(200).json(deletedTransaction) // QQ 201?
+    return res.status(200).json(deletedTransaction)
   } catch (error) {
     next(error)
   }

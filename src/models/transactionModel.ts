@@ -7,7 +7,7 @@ const transactionSchema = new Schema(
   {
     asset_id: String,
     requester: String, // for testing, should be number
-    requestee: String, // for testing, should be number
+    requestee: [String], // for testing, should be number
     created: String,
     status: String, // 'pending', 'declined', 'accepted'
   },
