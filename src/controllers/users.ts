@@ -76,8 +76,9 @@ export const updateUser = async (
 ) => {
   try {
     console.log('PUT to DATABASE')
+    console.log(req.body)
     const searchCriterion = { _id: req.body.user._id }
-    const result = await User.updateOne(searchCriterion, req.body.update) // this should be the res status reason!
+    const result = await User.updateOne(searchCriterion, req.body.update.changes) // this should be the res status reason!
     if (!result) return res.status(400).send('update failed')
     const updatedUser = await User.find(searchCriterion).exec()
     return res.status(200).json(updatedUser)  // TD this just sends a 200 if it finds the user, it should send a 200 if the update was successfull

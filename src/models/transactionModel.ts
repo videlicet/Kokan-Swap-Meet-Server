@@ -6,8 +6,8 @@ const { Schema, model } = mongoose
 const transactionSchema = new Schema(
   {
     asset_id: String,
-    requester: String, // for testing, should be number
-    requestee: [String], // for testing, should be number
+    requester: String,
+    requestee: [String],
     created: String,
     status: String, // 'pending', 'declined', 'accepted'
   },

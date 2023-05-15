@@ -8,11 +8,18 @@ assetsRouter.route('/')
     .post(createAsset)
 
 assetsRouter.route('/:id')
-    //.post(getAsset)
+    .post(function (req, res, next) {
+        /* change controller depending on parameter */
+        switch(req.params.id) {
+            case 'search':
+                getSearchedAssets(req, res, next)
+                break;
+            default:
+                getAsset(req, res, next)
+                break;
+          }
+    })
     .put(updateAsset)
     .delete(deleteAsset)
-
-assetsRouter.route('/search')
-    .post(getSearchedAssets)
 
 export default assetsRouter

@@ -54,7 +54,6 @@ export const updateAsset = async (req: Request, res: Response, next: NextFunctio
 export const deleteAsset = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('DELETE to DATABASE')
-    console.log(req.body)
     const deletedAsset = await Asset.deleteOne({ _id: req.body.asset._id })
     return res.status(200).send('Delete successfull') // QQ 201?
   } catch (error) {
@@ -65,7 +64,6 @@ export const deleteAsset = async (req: Request, res: Response, next: NextFunctio
 export const getSearchedAssets = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('GET to DATABASE')
-    console.log(req.body.asset)
     let assets = await Asset
       .find({ $or: [
         {title: { "$regex": req.body.asset.searchTerm, "$options": "i" }}, 
