@@ -23,11 +23,13 @@ export const loginUser = async (
   }
   // compare send password with stored password
   const passwordCorrect = await bcrypt.compare(req.body.password, user.password)
-  console.log(passwordCorrect)
   if (user && passwordCorrect == true) {
     try {
       // create access token
-      let accessToken = jwt.sign({ username: req.body.username }, process.env.SECRET_KEY)
+      let accessToken = jwt.sign(
+        { username: req.body.username },
+        process.env.SECRET_KEY,
+      )
       // create a response cookie
       const options = {
         httpOnly: true,
@@ -35,8 +37,7 @@ export const loginUser = async (
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
         maxAge: 10000000,
       }
-      res.set('Access-Control-Allow-Origin', process.env.FRONTENT_URL || process.env.LOCAL_FRONTEND_URL ) // this is necessarry because it means that the server allows cookies to be included in cross-origin requests
-      res.status(201).cookie('token', accessToken, options).json(user)
+      res.status(200).cookie('token', accessToken, options).json(user)
     } catch (error) {
       return res
         .status(500)
@@ -57,24 +58,29 @@ export const authenticateUser = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log(req.headers.cookie)
   if (req.headers.cookie) {
     console.log('JWT verification')
     const key = req.headers.cookie.split(' ')[0].slice(6)
-    jwt.verify(key, process.env.SECRET_KEY, async (err, authData: JwtPayload) => {
-      if (err) {
-        res.status(403).json({
-          success: false,
-          message: 'JWT authentication failed',
-        })
-      }
-      console.log('GET to DATABASE')
-      // find user in db
-      const user = await User.findOne({ username: authData.username }).exec()
-      if (!user) {
-        return res.status(404).json({ message: 'User not found.' })
-      }
-      res.status(200).json(user)
-    })
+    jwt.verify(
+      key,
+      process.env.SECRET_KEY,
+      async (err, authData: JwtPayload) => {
+        if (err) {
+          res.status(403).json({
+            success: false,
+            message: 'JWT authentication failed',
+          })
+        }
+        console.log('GET to DATABASE')
+        // find user in db
+        const user = await User.findOne({ username: authData.username }).exec()
+        if (!user) {
+          return res.status(404).json({ message: 'User not found.' })
+        }
+        res.status(200).json(user)
+      },
+    )
   } else {
     res.status(403).json({
       success: false,
@@ -88,7 +94,7 @@ export const logoutUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log('SET EXPIRED COOKIE')
+  console.log('CLEAR COOKIE')
   try {
     res
       .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
