@@ -1,10 +1,8 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
-import DB_URL from '../DB_URL.js' // when hosting locally
 import Transaction from '../models/transactionModel.js'
 
-mongoose.connect(DB_URL) // when hosting locally
-// mongoose.connect(process.env.DB_URL) // when hosting on the web
+mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 

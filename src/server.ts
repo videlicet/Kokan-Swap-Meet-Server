@@ -1,6 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express'
 import cors from 'cors'
-import mongoose from 'mongoose'
 import cookieParser from 'cookie-parser'
 // import session from 'express-session'
 

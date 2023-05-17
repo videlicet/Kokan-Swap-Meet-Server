@@ -1,14 +1,14 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
+
 import bcrypt from 'bcrypt'
 
-import DB_URL from '../DB_URL.js' // when hosting locally
 import User from '../models/userModel.js'
 import Asset from '../models/assetModel.js'
 import Transaction from '../models/transactionModel.js'
 
-mongoose.connect(DB_URL) // when hosting locally
-// mongoose.connect(process.env.DB_URL) // when hosting on the web
+/* mongoose */
+mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
@@ -76,12 +76,14 @@ export const updateUser = async (
 ) => {
   try {
     console.log('PUT to DATABASE')
-    console.log(req.body)
     const searchCriterion = { _id: req.body.user._id }
-    const result = await User.updateOne(searchCriterion, req.body.update.changes) // this should be the res status reason!
+    const result = await User.updateOne(
+      searchCriterion,
+      req.body.update.changes,
+    ) // this should be the res status reason!
     if (!result) return res.status(400).send('update failed')
     const updatedUser = await User.find(searchCriterion).exec()
-    return res.status(200).json(updatedUser)  // TD this just sends a 200 if it finds the user, it should send a 200 if the update was successfull
+    return res.status(200).json(updatedUser) // TD this just sends a 200 if it finds the user, it should send a 200 if the update was successfull
   } catch (error) {
     next(error)
   }
@@ -95,12 +97,21 @@ export const deleteUser = async (
   try {
     console.log('DELETE to DATABASE')
     /* delete corresponding transcations */
-    const deletedTransactionsRequestee = await Transaction.deleteMany({ requestee: req.body.user._id })
-    const deletedTransactionsRequester = await Transaction.deleteMany({ requester: req.body.user._id })
-    
+    const deletedTransactionsRequestee = await Transaction.deleteMany({
+      requestee: req.body.user._id,
+    })
+    const deletedTransactionsRequester = await Transaction.deleteMany({
+      requester: req.body.user._id,
+    })
+
     /* delete/update corresponidng assets */
-    const deletedAssets = await Asset.deleteMany({ owners: [req.body.user._id] })
-    const updatedAssets = await Asset.updateMany({ owners: req.body.user._id }, { $pull: { owners: req.body.user._id } } )
+    const deletedAssets = await Asset.deleteMany({
+      owners: [req.body.user._id],
+    })
+    const updatedAssets = await Asset.updateMany(
+      { owners: req.body.user._id },
+      { $pull: { owners: req.body.user._id } },
+    )
 
     /* delete user */
     const deletedUser = await User.deleteOne({ _id: req.body.user._id })
@@ -131,12 +142,12 @@ export const getUserRequests = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    let asset: any;
-    if (req.body.query === "requestee") {
+    let asset: any
+    if (req.body.query === 'requestee') {
       asset = await Transaction.find({
-      requestee: req.body.user._id,
-    }).exec()}
-    else if (req.body.query === "requester") {
+        requestee: req.body.user._id,
+      }).exec()
+    } else if (req.body.query === 'requester') {
       asset = await Transaction.find({
         requester: req.body.user._id,
       }).exec()
@@ -146,3 +157,4 @@ export const getUserRequests = async (
     next(error)
   }
 }
+

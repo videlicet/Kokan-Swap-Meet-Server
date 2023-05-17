@@ -3,12 +3,9 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 
-import DB_URL from '../DB_URL.js' // when hosting locally
-import SECRET_KEY from '../SECRET_KEY.js'
 import User from '../models/userModel.js'
 
-mongoose.connect(DB_URL) // when hosting locally
-// mongoose.connect(process.env.DB_URL) // when hosting on the web
+mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
@@ -18,7 +15,7 @@ export const loginUser = async (
   next: NextFunction,
 ) => {
   console.log('POST to DATABASE')
-  // find user in db
+  /*  find user in db */
   const user = await User.findOne({ username: req.body.username }).exec()
 
   if (!user) {
@@ -30,7 +27,7 @@ export const loginUser = async (
   if (user && passwordCorrect == true) {
     try {
       // create access token
-      let accessToken = jwt.sign({ username: req.body.username }, SECRET_KEY)
+      let accessToken = jwt.sign({ username: req.body.username }, process.env.SECRET_KEY)
       // create a response cookie
       const options = {
         httpOnly: true,
@@ -38,7 +35,7 @@ export const loginUser = async (
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
         maxAge: 10000000,
       }
-      res.set('Access-Control-Allow-Origin', 'http://localhost:5173') // this is necessarry because it means that the server allows cookies to be included in cross-origin requests
+      res.set('Access-Control-Allow-Origin', process.env.FRONTENT_URL || process.env.LOCAL_FRONTEND_URL ) // this is necessarry because it means that the server allows cookies to be included in cross-origin requests
       res.status(201).cookie('token', accessToken, options).json(user)
     } catch (error) {
       return res
@@ -63,7 +60,7 @@ export const authenticateUser = async (
   if (req.headers.cookie) {
     console.log('JWT verification')
     const key = req.headers.cookie.split(' ')[0].slice(6)
-    jwt.verify(key, SECRET_KEY, async (err, authData: JwtPayload) => {
+    jwt.verify(key, process.env.SECRET_KEY, async (err, authData: JwtPayload) => {
       if (err) {
         res.status(403).json({
           success: false,
