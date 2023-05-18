@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import { Octokit, App } from 'octokit'
 
 import User from '../models/userModel.js'
 
@@ -108,6 +109,7 @@ export const logoutUser = async (
 export const getAccessToken = async (  req: Request,
   res: Response,
   next: NextFunction) => {
+    console.log('GET accesstToken from GitHub')
     const params = "?client_id=" + process.env.GITHUB_CLIENT_ID + "&client_secret=" + process.env.GITHUB_CLIENT_SECRET + "&code=" + req.query.code
     try {
       const authentictor = await fetch(`https://github.com/login/oauth/access_token${params}`, {
@@ -120,7 +122,41 @@ export const getAccessToken = async (  req: Request,
       console.log(accessToken)
       return res.status(200).json(accessToken) // TD send http only cookie
     } catch(err) {
-
     }
-
   }
+
+  export const addCollaborator = async (req: Request,
+    res: Response,
+    next: NextFunction) => {
+      console.log('ADD Collaborator to GitHub REPO')
+      const octokit = new Octokit({
+        auth: req.body.access_token,
+      })
+
+      const data = 
+        await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
+        owner: 'videlicet',
+        repo: 'test-add-collab',
+        username: 'und-uebriges',
+        permission: 'pull'
+      })
+
+      // await octokit.request('GET /repos/{owner}/{repo}/collaborators', {
+      //   owner: 'videlicet',
+      //   repo: 'test-add-collab',
+      //   headers: {
+      //     'X-GitHub-Api-Version': '2022-11-28'
+      //   }
+      // })
+
+      console.log(data)
+      if (data.status === 200) {
+        let collaborators = await data.json()
+        return res.status(200).json(collaborators)
+      }
+      return res.status(400) 
+  }
+
+  /*
+
+  */
