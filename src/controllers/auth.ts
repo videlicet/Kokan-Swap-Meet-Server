@@ -58,7 +58,6 @@ export const authenticateUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log(req.headers.cookie)
   if (req.headers.cookie) {
     console.log('JWT verification')
     const key = req.headers.cookie.split(' ')[0].slice(6)
@@ -105,3 +104,23 @@ export const logoutUser = async (
       .json({ message: error.message, errors: error.errors })
   }
 }
+
+export const getAccessToken = async (  req: Request,
+  res: Response,
+  next: NextFunction) => {
+    const params = "?client_id=" + process.env.GITHUB_CLIENT_ID + "&client_secret=" + process.env.GITHUB_CLIENT_SECRET + "&code=" + req.query.code
+    try {
+      const authentictor = await fetch(`https://github.com/login/oauth/access_token${params}`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json"
+      }})
+      let accessToken = await authentictor.json()
+      console.log("accessToken: ")
+      console.log(accessToken)
+      return res.status(200).json(accessToken) // TD send http only cookie
+    } catch(err) {
+
+    }
+
+  }
