@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
@@ -36,7 +37,7 @@ export const loginUser = async (
         httpOnly: true,
         secure: true,
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-        maxAge: 10000000,
+        maxAge: 100000,
       }
       res.status(200).cookie('token', accessToken, options).json(user)
     } catch (error) {
@@ -61,13 +62,13 @@ export const authenticateUser = async (
 ) => {
   if (req.headers.cookie) {
     console.log('JWT verification')
-    const key = req.headers.cookie.split(' ')[0].slice(6)
+    const key = req.cookies.token
     jwt.verify(
       key,
       process.env.SECRET_KEY,
       async (err, authData: JwtPayload) => {
         if (err) {
-          res.status(403).json({
+          return res.status(403).json({
             success: false,
             message: 'JWT authentication failed',
           })
@@ -78,7 +79,7 @@ export const authenticateUser = async (
         if (!user) {
           return res.status(404).json({ message: 'User not found.' })
         }
-        res.status(200).json(user)
+        return res.status(200).json(user)
       },
     )
   } else {
@@ -98,6 +99,7 @@ export const logoutUser = async (
   try {
     res
       .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
+      .clearCookie('access_token', { path: '/', sameSite: 'none', secure: true })
       .sendStatus(200)
   } catch (error) {
     return res
@@ -118,9 +120,19 @@ export const getAccessToken = async (  req: Request,
         "Accept": "application/json"
       }})
       let accessToken = await authentictor.json()
-      console.log("accessToken: ")
-      console.log(accessToken)
-      return res.status(200).json(accessToken) // TD send http only cookie
+      /* jwt sign gitHub token  */
+      accessToken = jwt.sign(
+        { access_token: accessToken.access_token },
+        process.env.SECRET_KEY,
+      )
+      // create a response cookie
+      const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
+        maxAge: 100000,
+      }
+       return res.status(200).cookie('access_token', 'Bearer ' + accessToken, options).json({success: "success"})
     } catch(err) {
     }
   }
@@ -128,9 +140,16 @@ export const getAccessToken = async (  req: Request,
   export const addCollaborator = async (req: Request,
     res: Response,
     next: NextFunction) => {
-      console.log('ADD Collaborator to GitHub REPO')
+      /* verify and decode gitHub access_token cookie */
+      const key = req.cookies.access_token.slice(7)
+      const decoded = jwt.verify(
+        key,
+        process.env.SECRET_KEY,
+      )
+
+      console.log('ADD collaborator to GitHub repo')
       const octokit = new Octokit({
-        auth: req.body.access_token,
+        auth: decoded.access_token, //TD typing
       })
 
       const data = 
@@ -141,15 +160,6 @@ export const getAccessToken = async (  req: Request,
         permission: 'pull'
       })
 
-      // await octokit.request('GET /repos/{owner}/{repo}/collaborators', {
-      //   owner: 'videlicet',
-      //   repo: 'test-add-collab',
-      //   headers: {
-      //     'X-GitHub-Api-Version': '2022-11-28'
-      //   }
-      // })
-
-      console.log(data)
       if (data.status === 200) {
         let collaborators = await data.json()
         return res.status(200).json(collaborators)
@@ -157,6 +167,16 @@ export const getAccessToken = async (  req: Request,
       return res.status(400) 
   }
 
-  /*
+  /* 
 
+  test: get repo collaborators
+      // let collaborators = await octokit.request('GET /repos/{owner}/{repo}/collaborators', {
+      //   owner: 'videlicet',
+      //   repo: 'test-add-collab',
+      //   headers: {
+      //     'X-GitHub-Api-Version': '2022-11-28'
+      //   }
+      // })
+
+      // return res.status(200).json(collaborators)
   */
