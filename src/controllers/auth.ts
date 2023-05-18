@@ -152,31 +152,41 @@ export const getAccessToken = async (  req: Request,
         auth: decoded.access_token, //TD typing
       })
 
-      const data = 
-        await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
-        owner: 'videlicet',
-        repo: 'test-add-collab',
-        username: 'und-uebriges',
-        permission: 'pull'
-      })
+      console.log(req.body.requesteeGitHub)
+      console.log(req.body.requesterGitHub)
+      console.log(req.body.gitHubRepo)
 
-      if (data.status === 200) {
-        let collaborators = await data.json()
-        return res.status(200).json(collaborators)
-      }
-      return res.status(400) 
+
+      /* test: get repo collaborators */
+      let collaborators = await octokit.request('GET /repos/{owner}/{repo}/collaborators', {
+        owner: req.body.requesteeGitHub,
+        repo: req.body.gitHubRepo,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+      let {data} = collaborators
+
+      console.log(data)
+      return res.status(200).json(data)
+
+      // const data = 
+      //   await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
+      //   owner: req.body.requesteeGitHub,
+      //   repo: req.body.gitHubRepo,
+      //   username: req.body.requesterGitHub,
+      //   permission: 'pull'
+      // })
+
+      // if (data.status === 200) {
+      //   let collaborators = await data.json()
+      //   return res.status(200).json(collaborators)
+      // }
+      // return res.status(400) 
   }
 
   /* 
 
-  test: get repo collaborators
-      // let collaborators = await octokit.request('GET /repos/{owner}/{repo}/collaborators', {
-      //   owner: 'videlicet',
-      //   repo: 'test-add-collab',
-      //   headers: {
-      //     'X-GitHub-Api-Version': '2022-11-28'
-      //   }
-      // })
+ 
 
-      // return res.status(200).json(collaborators)
   */

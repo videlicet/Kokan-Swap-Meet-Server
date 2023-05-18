@@ -75,7 +75,7 @@ export const updateUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('PUT to DATABASE')
+    console.log('UPDATE USER in DB')
     const searchCriterion = { _id: req.body.user._id }
     const result = await User.updateOne(
       searchCriterion,
