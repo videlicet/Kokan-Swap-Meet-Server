@@ -107,6 +107,16 @@ export const getTransactionUsers = async (
   try {
     console.log('GET to DATABASE')
     const transactionWithUsers = await Transaction.aggregate([
+      {
+        $match: {
+          $expr: {
+            $eq: [
+              '$_id',
+              { $toObjectId: req.body.transaction_id },
+            ],
+          },
+        },
+      },
       /* project requestee ids in requestee array to ObjectIds*/
       {
         $addFields: {
