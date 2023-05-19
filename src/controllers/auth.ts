@@ -61,7 +61,7 @@ export const authenticateUser = async (
   next: NextFunction,
 ) => {
   if (req.headers.cookie) {
-    console.log('JWT verification')
+    console.log('JWT VERIFICATION:')
     const key = req.cookies.token
     jwt.verify(
       key,
@@ -73,7 +73,7 @@ export const authenticateUser = async (
             message: 'JWT authentication failed',
           })
         }
-        console.log('GET to DATABASE')
+        console.log('– GET USER FROM DATABASE')
         // find user in db
         const user = await User.findOne({ username: authData.username }).exec()
         if (!user) {
@@ -108,36 +108,77 @@ export const logoutUser = async (
   }
 }
 
-export const getAccessToken = async (  req: Request,
+export const getGitHubAccessToken = async (  req: Request,
   res: Response,
   next: NextFunction) => {
-    console.log('GET accesstToken from GitHub')
+    console.log('GET GITHUB ACCESS TOKEN:')
     const params = "?client_id=" + process.env.GITHUB_CLIENT_ID + "&client_secret=" + process.env.GITHUB_CLIENT_SECRET + "&code=" + req.query.code
     try {
+      /* request GitHub access token  */
+      console.log('– REQUEST GITHUB ACCESS TOKEN')
       const authentictor = await fetch(`https://github.com/login/oauth/access_token${params}`, {
       method: "POST",
       headers: {
         "Accept": "application/json"
       }})
       let accessToken = await authentictor.json()
-      /* jwt sign gitHub token  */
+      console.log('– JWT SIGN GITHUB ACCESS TOKEN')
+
+      /* jwt sign GitHub access token  */
       accessToken = jwt.sign(
         { access_token: accessToken.access_token },
         process.env.SECRET_KEY,
       )
-      // create a response cookie
+
+      /* create a response cookie */
+      console.log('– SEND RESPONSE COOKIE')
       const options = {
         httpOnly: true,
         secure: true,
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-        maxAge: 100000,
       }
-       return res.status(200).cookie('access_token', 'Bearer ' + accessToken, options).json({success: "success"})
+       return res.status(200).cookie('access_token', 'Bearer ' + accessToken, options).send()
     } catch(err) {
+      console.log('– REQUEST GITHUB ACCESS TOKEN FAILED')
     }
   }
 
-  export const addCollaborator = async (req: Request,
+  export const getGitHubUser = async (req: Request,
+    res: Response,
+    next: NextFunction) => {
+      console.log('GET GITHUB USER:')
+      console.log('– VERIFY GITHUB JWT ACCESS TOKEN')
+      /* verify and decode gitHub access_token cookie */
+      const key = req.cookies.access_token.slice(7)
+      const decoded = jwt.verify(
+        key,
+        process.env.SECRET_KEY,
+      )
+    
+      console.log('– GET GITHUB USER:')
+      const octokit = new Octokit({
+        auth: decoded.access_token, //TD typing
+      })
+
+      try {
+      const gitHubUser = await octokit.request('GET /user', {
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+      if (gitHubUser) {
+        return res.status(200).json(gitHubUser.data)
+      }
+      return res.status(404).send('No GitHub User Found')
+    } catch(err) {
+        // TD ErrorHandling
+      }
+  
+
+  }
+
+
+  export const addGitHubCollaborator = async (req: Request,
     res: Response,
     next: NextFunction) => {
       /* verify and decode gitHub access_token cookie */
@@ -147,7 +188,7 @@ export const getAccessToken = async (  req: Request,
         process.env.SECRET_KEY,
       )
 
-      console.log('ADD collaborator to GitHub repo')
+      console.log('ADD COLLABORATOR TO GITHUB REPO')
       const octokit = new Octokit({
         auth: decoded.access_token, //TD typing
       })

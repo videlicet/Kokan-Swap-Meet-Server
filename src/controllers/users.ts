@@ -41,7 +41,7 @@ export const createUser = async (
       kokans: 0,
       first_name: '',
       last_name: '',
-      pictureURL: './profile_picture.png',
+      pictureURL: req.body.pictureURL,
       created: new Date(),
     })
     await newUser.save()
@@ -58,8 +58,12 @@ export const getUser = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    const user = await User.findOne({ _id: req.body.user._id }).exec()
-    if (user) {
+    let user: any // TD typing 
+    if (req.body.username) {
+      user = await User.findOne({ username: req.body.username }).exec()
+    } else {
+      user = await User.findOne({ _id: req.body.user._id }).exec()}
+    if (user !== null) {
       return res.status(200).json(user)
     } else {
       return res.status(404).json(user)
