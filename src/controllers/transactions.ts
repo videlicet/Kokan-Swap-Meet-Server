@@ -99,3 +99,32 @@ export const deleteTransaction = async (
   }
 }
 
+export const getTransactionUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    console.log('GET to DATABASE')
+    const transactionWithUsers = await Transaction.aggregate([{
+      $lookup: {
+        from: "Users",
+        let: {"searchId": {$toObjectId: "$requester.username"}}, 
+        pipeline: [{
+          "$match": {"$expr":[ {"_id": "$$searchId"}]}
+        },
+        {$project: {
+          "_id": 0,
+          "username": 1
+        }}],
+        as: "requester_username"
+      }
+    }
+    ]).exec()
+    console.log('Aggregation ended')
+    console.log(transactionWithUsers)
+    return res.status(200).json(transactionWithUsers)
+  } catch (error) {
+    next(error)
+  }
+}

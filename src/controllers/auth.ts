@@ -37,7 +37,7 @@ export const loginUser = async (
         httpOnly: true,
         secure: true,
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-        maxAge: 100000,
+        maxAge: 3600000,
       }
       res.status(200).cookie('token', accessToken, options).json(user)
     } catch (error) {

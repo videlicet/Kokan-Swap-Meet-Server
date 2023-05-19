@@ -6,6 +6,7 @@ const { Schema, model } = mongoose
 const assetSchema = new Schema(
   {
     asset_id: String,
+    gitHub_repo: String,
     title: String,
     kokans: Number,
     creator: String,
@@ -15,7 +16,6 @@ const assetSchema = new Schema(
     type: [String],
     description_short: String,
     description_long: String,
-    // TD tag?
     licence: String,
   },
   { collection: 'Assets' },
