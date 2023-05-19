@@ -99,7 +99,11 @@ export const logoutUser = async (
   try {
     res
       .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
-      .clearCookie('access_token', { path: '/', sameSite: 'none', secure: true })
+      .clearCookie('access_token', {
+        path: '/',
+        sameSite: 'none',
+        secure: true,
+      })
       .sendStatus(200)
   } catch (error) {
     return res
@@ -108,125 +112,137 @@ export const logoutUser = async (
   }
 }
 
-export const getGitHubAccessToken = async (  req: Request,
+export const getGitHubAccessToken = async (
+  req: Request,
   res: Response,
-  next: NextFunction) => {
-    console.log('GET GITHUB ACCESS TOKEN:')
-    const params = "?client_id=" + process.env.GITHUB_CLIENT_ID + "&client_secret=" + process.env.GITHUB_CLIENT_SECRET + "&code=" + req.query.code
-    try {
-      /* request GitHub access token  */
-      console.log('– REQUEST GITHUB ACCESS TOKEN')
-      const authentictor = await fetch(`https://github.com/login/oauth/access_token${params}`, {
-      method: "POST",
-      headers: {
-        "Accept": "application/json"
-      }})
-      let accessToken = await authentictor.json()
-      console.log('– JWT SIGN GITHUB ACCESS TOKEN')
+  next: NextFunction,
+) => {
+  console.log('GET GITHUB ACCESS TOKEN:')
+  const params =
+    '?client_id=' +
+    process.env.GITHUB_CLIENT_ID +
+    '&client_secret=' +
+    process.env.GITHUB_CLIENT_SECRET +
+    '&code=' +
+    req.query.code
+  try {
+    /* request GitHub access token  */
+    console.log('– REQUEST GITHUB ACCESS TOKEN')
+    const authentictor = await fetch(
+      `https://github.com/login/oauth/access_token${params}`,
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+      },
+    )
+    let accessToken = await authentictor.json()
+    console.log('– JWT SIGN GITHUB ACCESS TOKEN')
 
-      /* jwt sign GitHub access token  */
-      accessToken = jwt.sign(
-        { access_token: accessToken.access_token },
-        process.env.SECRET_KEY,
-      )
+    /* jwt sign GitHub access token  */
+    accessToken = jwt.sign(
+      { access_token: accessToken.access_token },
+      process.env.SECRET_KEY,
+    )
 
-      /* create a response cookie */
-      console.log('– SEND RESPONSE COOKIE')
-      const options = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-      }
-       return res.status(200).cookie('access_token', 'Bearer ' + accessToken, options).send()
-    } catch(err) {
-      console.log('– REQUEST GITHUB ACCESS TOKEN FAILED')
+    /* create a response cookie */
+    console.log('– SEND RESPONSE COOKIE')
+    const options = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
     }
+    return res
+      .status(200)
+      .cookie('access_token', 'Bearer ' + accessToken, options)
+      .send()
+  } catch (err) {
+    console.log('– REQUEST GITHUB ACCESS TOKEN FAILED')
   }
+}
 
-  export const getGitHubUser = async (req: Request,
-    res: Response,
-    next: NextFunction) => {
-      console.log('GET GITHUB USER:')
-      console.log('– VERIFY GITHUB JWT ACCESS TOKEN')
-      /* verify and decode gitHub access_token cookie */
-      const key = req.cookies.access_token.slice(7)
-      const decoded = jwt.verify(
-        key,
-        process.env.SECRET_KEY,
-      )
-    
-      console.log('– GET GITHUB USER:')
-      const octokit = new Octokit({
-        auth: decoded.access_token, //TD typing
-      })
+export const getGitHubUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('GET GITHUB USER:')
+  console.log('– VERIFY GITHUB JWT ACCESS TOKEN')
+  /* verify and decode gitHub access_token cookie */
+  const key = req.cookies.access_token.slice(7)
+  const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
-      try {
-      const gitHubUser = await octokit.request('GET /user', {
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      })
-      if (gitHubUser) {
-        return res.status(200).json(gitHubUser.data)
-      }
-      return res.status(404).send('No GitHub User Found')
-    } catch(err) {
-        // TD ErrorHandling
-      }
-  
+  console.log('– GET GITHUB USER:')
+  const octokit = new Octokit({
+    auth: decoded.access_token, //TD typing
+  })
 
+  try {
+    const gitHubUser = await octokit.request('GET /user', {
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    })
+    if (gitHubUser) {
+      return res.status(200).json(gitHubUser.data)
+    }
+    return res.status(404).send('No GitHub User Found')
+  } catch (err) {
+    // TD ErrorHandling
   }
+}
 
+export const addGitHubCollaborator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  /* verify and decode gitHub access_token cookie */
+  const key = req.cookies.access_token.slice(7)
+  const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
-  export const addGitHubCollaborator = async (req: Request,
-    res: Response,
-    next: NextFunction) => {
-      /* verify and decode gitHub access_token cookie */
-      const key = req.cookies.access_token.slice(7)
-      const decoded = jwt.verify(
-        key,
-        process.env.SECRET_KEY,
-      )
+  console.log('ADD COLLABORATOR TO GITHUB REPO')
+  const octokit = new Octokit({
+    auth: decoded.access_token, //TD typing
+  })
 
-      console.log('ADD COLLABORATOR TO GITHUB REPO')
-      const octokit = new Octokit({
-        auth: decoded.access_token, //TD typing
-      })
+  console.log(req.body.requesteeGitHub)
+  console.log(req.body.requesterGitHub)
+  console.log(req.body.gitHubRepo)
 
-      console.log(req.body.requesteeGitHub)
-      console.log(req.body.requesterGitHub)
-      console.log(req.body.gitHubRepo)
+  /* test: get repo collaborators */
+  let collaborators = await octokit.request(
+    'GET /repos/{owner}/{repo}/collaborators',
+    {
+      owner: req.body.requesteeGitHub,
+      repo: req.body.gitHubRepo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    },
+  )
+  let { data } = collaborators
 
+  console.log(data)
+  return res.status(200).json(data)
 
-      /* test: get repo collaborators */
-      let collaborators = await octokit.request('GET /repos/{owner}/{repo}/collaborators', {
-        owner: req.body.requesteeGitHub,
-        repo: req.body.gitHubRepo,
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      })
-      let {data} = collaborators
+  // const data =
+  //   await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
+  //   owner: req.body.requesteeGitHub,
+  //   repo: req.body.gitHubRepo,
+  //   username: req.body.requesterGitHub,
+  //   permission: 'pull'
+  // })
 
-      console.log(data)
-      return res.status(200).json(data)
+  // if (data.status === 200) {
+  //   let collaborators = await data.json()
+  //   return res.status(200).json(collaborators)
+  // }
+  // return res.status(400)
+}
 
-      // const data = 
-      //   await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
-      //   owner: req.body.requesteeGitHub,
-      //   repo: req.body.gitHubRepo,
-      //   username: req.body.requesterGitHub,
-      //   permission: 'pull'
-      // })
-
-      // if (data.status === 200) {
-      //   let collaborators = await data.json()
-      //   return res.status(200).json(collaborators)
-      // }
-      // return res.status(400) 
-  }
-
-  /* 
+/* 
 
  
 

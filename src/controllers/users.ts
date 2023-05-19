@@ -58,11 +58,12 @@ export const getUser = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    let user: any // TD typing 
+    let user: any // TD typing
     if (req.body.username) {
       user = await User.findOne({ username: req.body.username }).exec()
     } else {
-      user = await User.findOne({ _id: req.body.user._id }).exec()}
+      user = await User.findOne({ _id: req.body.user._id }).exec()
+    }
     if (user !== null) {
       return res.status(200).json(user)
     } else {
@@ -161,4 +162,3 @@ export const getUserRequests = async (
     next(error)
   }
 }
-

@@ -106,23 +106,65 @@ export const getTransactionUsers = async (
 ) => {
   try {
     console.log('GET to DATABASE')
-    const transactionWithUsers = await Transaction.aggregate([{
-      $lookup: {
-        from: "Users",
-        let: {"searchId": {$toObjectId: "$requester.username"}}, 
-        pipeline: [{
-          "$match": {"$expr":[ {"_id": "$$searchId"}]}
+    const transactionWithUsers = await Transaction.aggregate([
+      /* project requestee ids in requestee array to ObjectIds*/
+      {
+        $addFields: {
+          requestee: {
+            $map: {
+              input: '$requestee',
+              as: 'r',
+              in: { $toObjectId: '$$r' },
+            },
+          },
         },
-        {$project: {
-          "_id": 0,
-          "username": 1
-        }}],
-        as: "requester_username"
-      }
-    }
+      },
+      /* aggregrate requester id with requester username after projecting requester id to ObjectId*/
+      {
+        $lookup: {
+          from: 'Users',
+          let: { requesterId: { $toObjectId: '$requester' } },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ['$_id', '$$requesterId'] } },
+            },
+            {
+              $project: {
+                _id: 0,
+                username: 1,
+              },
+            },
+          ],
+          as: 'requester_username',
+        },
+      },
+      {
+        $addFields: {
+          requester_username: {
+            $arrayElemAt: ['$requester_username.username', 0],
+          },
+        },
+      },
+      /* aggregrate requestee ids with requestee usernames*/
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'requestee',
+          foreignField: '_id',
+          as: 'requestee_data',
+        },
+      },
+      {
+        $addFields: {
+          requestee_username: '$requestee_data.username',
+        },
+      },
+      {
+        $project: {
+          requestee_data: 0,
+        },
+      },
     ]).exec()
-    console.log('Aggregation ended')
-    console.log(transactionWithUsers)
     return res.status(200).json(transactionWithUsers)
   } catch (error) {
     next(error)

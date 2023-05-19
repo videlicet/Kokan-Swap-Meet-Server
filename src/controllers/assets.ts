@@ -1,12 +1,16 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
-import Asset from '../models/assetModel.js';
+import Asset from '../models/assetModel.js'
 
 mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const getAssets = async (req: Request, res: Response, next: NextFunction) => {
+export const getAssets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('GET to DATABASE')
     const users = await Asset.find({}).exec()
@@ -16,7 +20,11 @@ export const getAssets = async (req: Request, res: Response, next: NextFunction)
   }
 }
 
-export const createAsset = async (req: Request, res: Response, next: NextFunction) => {
+export const createAsset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('POST to DATABASE')
     const newAsset = new Asset(req.body)
@@ -27,7 +35,11 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
-export const getAsset = async (req: Request, res: Response, next: NextFunction) => {
+export const getAsset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('GET to DATABASE')
     const asset = await Asset.findOne({ _id: req.body.asset._id }).exec()
@@ -37,7 +49,11 @@ export const getAsset = async (req: Request, res: Response, next: NextFunction) 
   }
 }
 
-export const updateAsset = async (req: Request, res: Response, next: NextFunction) => {
+export const updateAsset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('PUT to DATABASE')
     const searchCriterion = { _id: req.body.asset.asset_id }
@@ -49,7 +65,11 @@ export const updateAsset = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
-export const deleteAsset = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteAsset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('DELETE to DATABASE')
     const deletedAsset = await Asset.deleteOne({ _id: req.body.asset._id })
@@ -59,16 +79,30 @@ export const deleteAsset = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
-export const getSearchedAssets = async (req: Request, res: Response, next: NextFunction) => {
+export const getSearchedAssets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log('GET to DATABASE')
-    let assets = await Asset
-      .find({ $or: [
-        {title: { "$regex": req.body.asset.searchTerm, "$options": "i" }}, 
-        {description_short: { "$regex": req.body.asset.searchTerm, "$options": "i" }}, 
-        {description_long: { "$regex": req.body.asset.searchTerm, "$options": "i" }}
-      ]})
-      .exec()
+    let assets = await Asset.find({
+      $or: [
+        { title: { $regex: req.body.asset.searchTerm, $options: 'i' } },
+        {
+          description_short: {
+            $regex: req.body.asset.searchTerm,
+            $options: 'i',
+          },
+        },
+        {
+          description_long: {
+            $regex: req.body.asset.searchTerm,
+            $options: 'i',
+          },
+        },
+      ],
+    }).exec()
     return res.status(200).json(assets)
   } catch (error) {
     next(error)
