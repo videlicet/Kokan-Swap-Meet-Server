@@ -207,10 +207,6 @@ export const addGitHubCollaborator = async (
     auth: decoded.access_token, //TD typing
   })
 
-  console.log(req.body.requesteeGitHub)
-  console.log(req.body.requesterGitHub)
-  console.log(req.body.gitHubRepo)
-
   /* test: get repo collaborators */
   let collaborators = await octokit.request(
     'GET /repos/{owner}/{repo}/collaborators',
@@ -241,9 +237,3 @@ export const addGitHubCollaborator = async (
   // }
   // return res.status(400)
 }
-
-/* 
-
- 
-
-  */

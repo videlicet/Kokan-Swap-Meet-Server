@@ -108,6 +108,7 @@ export const getTransactionUsers = async (
     console.log('GET to DATABASE')
     const transactionWithUsers = await Transaction.aggregate([
       {
+        /* use transaction id passed from the client to query the correct asset */
         $match: {
           $expr: {
             $eq: [
@@ -169,9 +170,35 @@ export const getTransactionUsers = async (
           requestee_username: '$requestee_data.username',
         },
       },
+      /* aggregate asset id with asset repo name */
+      {
+        $lookup: {
+          from: 'Assets',
+          let: { assetId: { $toObjectId: '$asset_id' } },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ['$_id', '$$assetId'] } },
+            },
+            {
+              $project: {
+                _id: 0,
+                gitHub_repo: 1,
+              },
+            },
+          ],
+          as: 'asset_data',
+        },
+      },
+      {
+        $addFields: {
+          asset_gitHub_repo: {
+            $arrayElemAt: ['$asset_data.gitHub_repo', 0],
+          },
+        },
+      },
       {
         $project: {
-          requestee_data: 0,
+          asset_data: 0,
         },
       },
     ]).exec()
