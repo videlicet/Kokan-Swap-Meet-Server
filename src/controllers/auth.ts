@@ -4,52 +4,31 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Octokit, App } from 'octokit'
+import nodemailer from 'nodemailer'
 
+/* models */
 import User from '../models/userModel.js'
 
+/* utils */
+import { verificatioEmail } from '../utils/Emails.js'
+
+/* mongo DB setup */
 mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const loginUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  console.log('POST to DATABASE')
-  /*  find user in db */
-  const user = await User.findOne({ username: req.body.username }).exec()
+/* nodemailer setup */
+let transporter = nodemailer.createTransport({
+  service: process.env.EMAIL_SERVICE,
+  auth: {
+    user: process.env.EMAIL_ADDRESS,
+    pass: process.env.EMAIL_ADDRESS_PW,
+  },
+})
 
-  if (!user) {
-    return res.status(404).json({ message: 'User not found.' })
-  }
-  // compare send password with stored password
-  const passwordCorrect = await bcrypt.compare(req.body.password, user.password)
-  if (user && passwordCorrect == true) {
-    try {
-      // create access token
-      let accessToken = jwt.sign(
-        { username: req.body.username },
-        process.env.SECRET_KEY,
-      )
-      // create a response cookie
-      const options = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-        maxAge: 3600000,
-      }
-      res.status(200).cookie('token', accessToken, options).json(user)
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: error.message, errors: error.errors })
-    }
-  } else return res.status(401).json({ message: 'Password incorrect.' })
-}
+let verificationCodesStore: any = {} // TD typing
 
 /* type for authData in jwt.verify() */
-
 interface JwtPayload {
   username: string
   password: string
@@ -90,6 +69,43 @@ export const authenticateUser = async (
   }
 }
 
+export const loginUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('POST to DATABASE')
+  /*  find user in db */
+  const user = await User.findOne({ username: req.body.username }).exec()
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found.' })
+  }
+  // compare send password with stored password
+  const passwordCorrect = await bcrypt.compare(req.body.password, user.password)
+  if (user && passwordCorrect == true) {
+    try {
+      // create access token
+      let accessToken = jwt.sign(
+        { username: req.body.username },
+        process.env.SECRET_KEY,
+      )
+      // create a response cookie
+      const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
+        maxAge: 3600000,
+      }
+      res.status(200).cookie('token', accessToken, options).json(user)
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: error.message, errors: error.errors })
+    }
+  } else return res.status(401).json({ message: 'Password incorrect.' })
+}
+
 export const logoutUser = async (
   req: Request,
   res: Response,
@@ -110,6 +126,58 @@ export const logoutUser = async (
       .status(500)
       .json({ message: error.message, errors: error.errors })
   }
+}
+
+export const emailVerfication = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('EMAIL VERIFICATION:')
+  const verification_code = Math.floor(Math.random() * 90000) + 10000
+  let mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: req.body.email,
+    subject: 'Kokan: Welcome!',
+    html: verificatioEmail(req.body.username, verification_code),
+  }
+  transporter.sendMail(mailOptions, function (error: any, info: any) {
+    // TD typing
+    if (error) {
+      console.log(error)
+    } else {
+      console.log('– EMAIL SENT: ' + info.response)
+      verificationCodesStore = {
+        ...verificationCodesStore,
+        [`${req.body.username}`]: { verification_code: verification_code },
+      }
+    }
+  })
+  /* set cookie with verification code*/
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
+    maxAge: 3600000, // TD change maxAge to 10 min
+  }
+  return res
+    .status(200)
+    .cookie('verification_code', verification_code, options)
+    .json({ verification_code: verification_code })
+}
+
+export const getVerificationCode = async (
+  //rename, because you're already checking wth ver code correct
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('GET VERIFICATION CODE')
+  const clientVerificationCode = req.cookies.verification_code
+  const { verification_code } = verificationCodesStore[req.body.username]
+  if (verification_code === Number(clientVerificationCode)) {
+    return res.status(200).json({ success: true })
+  } else return res.status(400).json({success: false})
 }
 
 export const getGitHubAccessToken = async (
