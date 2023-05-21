@@ -59,7 +59,7 @@ export function verificatioEmail(username: string, verificationCode: string) {
                             </tr>
                             <tr>
                                 <td align="center" style="padding: 20px 0;">
-                                    <a href="${process.env.FRONTEND_URL}login?vcode=${verificationCode}"
+                                    <a href="${process.env.FRONTEND_URL}email-verification?vcode=${verificationCode}&user=${username}"
                                         style="background-color: #000000; color: #ffffff; padding: 10px 20px; text-decoration: none; text-transform: uppercase; border-radius: 4px; font-weight: bold;">Verify
                                         Account</a>
                                 </td>
@@ -68,7 +68,7 @@ export function verificatioEmail(username: string, verificationCode: string) {
                                 <td style="padding: 20px 0;">
                                     <p>If the button above doesn't work, you can also copy and paste the following link into your
                                         browser:</p>
-                                    <p><a href="${process.env.FRONTEND_URL}login?vcode=${verificationCode}">${process.env.FRONTEND_URL}login?vcode=${verificationCode}</a>
+                                    <p><a href="${process.env.FRONTEND_URL}email-verification?vcode=${verificationCode}&user=${username}">${process.env.FRONTEND_URL}email-verification?vcode=${verificationCode}&user=${username}</a>
                                     </p>
                                 </td>
                             </tr>

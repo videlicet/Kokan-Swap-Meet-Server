@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Octokit, App } from 'octokit'
 import nodemailer from 'nodemailer'
+import fetch from 'node-fetch'
 
 /* models */
 import User from '../models/userModel.js'
@@ -151,6 +152,7 @@ export const emailVerfication = async (
         ...verificationCodesStore,
         [`${req.body.username}`]: { verification_code: verification_code },
       }
+      console.log(verificationCodesStore)
     }
   })
   /* set cookie with verification code*/
@@ -166,18 +168,20 @@ export const emailVerfication = async (
     .json({ verification_code: verification_code })
 }
 
-export const getVerificationCode = async (
-  //rename, because you're already checking wth ver code correct
+export const verifyVerificationCode = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   console.log('GET VERIFICATION CODE')
+  console.log('req.body.username: ' + req.body.username)
   const clientVerificationCode = req.cookies.verification_code
-  const { verification_code } = verificationCodesStore[req.body.username]
-  if (verification_code === Number(clientVerificationCode)) {
-    return res.status(200).json({ success: true })
-  } else return res.status(400).json({success: false})
+  if (verificationCodesStore[req.body.username]) {
+    const { verification_code } = verificationCodesStore[req.body.username]
+    if (verification_code === Number(clientVerificationCode)) {
+      return res.status(200).json({ success: true })
+    } else return res.status(400).json({ success: false })
+  } else return res.status(400).json({ success: false })
 }
 
 export const getGitHubAccessToken = async (
@@ -227,6 +231,8 @@ export const getGitHubAccessToken = async (
       .send()
   } catch (err) {
     console.log('– REQUEST GITHUB ACCESS TOKEN FAILED')
+    console.log(err)
+    return res.send()
   }
 }
 
@@ -241,7 +247,7 @@ export const getGitHubUser = async (
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
-  console.log('– GET GITHUB USER:')
+  console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
     auth: decoded.access_token, //TD typing
   })
@@ -253,11 +259,15 @@ export const getGitHubUser = async (
       },
     })
     if (gitHubUser) {
+      console.log('–– SUCCESS')
+      console.log(gitHubUser)
       return res.status(200).json(gitHubUser.data)
     }
+    console.log('–– SUCCESS')
     return res.status(404).send('No GitHub User Found')
   } catch (err) {
-    // TD ErrorHandling
+    console.log('X FAILURE')
+    console.log(err)
   }
 }
 

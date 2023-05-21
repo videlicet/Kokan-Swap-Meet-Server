@@ -38,6 +38,7 @@ export const createUser = async (
       username: req.body.username,
       password: password,
       email: req.body.email,
+      email_verified: req.body.email_verified,
       kokans: 0,
       first_name: '',
       last_name: '',
@@ -80,13 +81,18 @@ export const updateUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('UPDATE USER in DB')
-    const searchCriterion = { _id: req.body.user._id }
+    console.log('UPDATE USER IN DB')
+    let searchCriterion: {}
+    if (req.body.user.username) {
+      searchCriterion = { username: req.body.user.username }
+    } else {
+      searchCriterion = { _id: req.body.user._id }
+    }
     const result = await User.updateOne(
       searchCriterion,
       req.body.update.changes,
     ) // this should be the res status reason!
-    if (!result) return res.status(400).send('update failed')
+    if (!result) return res.status(400).send('Updte failes')
     const updatedUser = await User.find(searchCriterion).exec()
     return res.status(200).json(updatedUser) // TD this just sends a 200 if it finds the user, it should send a 200 if the update was successfull
   } catch (error) {
@@ -100,7 +106,7 @@ export const deleteUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('DELETE to DATABASE')
+    console.log('DELETE USER IN DATABASE')
     /* delete corresponding transcations */
     const deletedTransactionsRequestee = await Transaction.deleteMany({
       requestee: req.body.user._id,
