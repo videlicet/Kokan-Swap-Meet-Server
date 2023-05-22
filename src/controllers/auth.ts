@@ -3,9 +3,9 @@ import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { Octokit, App } from 'octokit'
+import { Octokit } from 'octokit'
 import nodemailer from 'nodemailer'
-import fetch from 'node-fetch'
+import fetch from 'node-fetch' // node has fetch integrated since 20022, but deploying on render requires it 
 
 /* models */
 import User from '../models/userModel.js'
@@ -173,8 +173,7 @@ export const verifyVerificationCode = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log('GET VERIFICATION CODE')
-  console.log('req.body.username: ' + req.body.username)
+  console.log('GET VERIFICATION CODE: ')
   const clientVerificationCode = req.cookies.verification_code
   if (verificationCodesStore[req.body.username]) {
     const { verification_code } = verificationCodesStore[req.body.username]
@@ -230,7 +229,7 @@ export const getGitHubAccessToken = async (
       .cookie('access_token', 'Bearer ' + accessToken, options)
       .send()
   } catch (err) {
-    console.log('– REQUEST GITHUB ACCESS TOKEN FAILED')
+    console.log('X FAILED')
     console.log(err)
     return res.send()
   }
@@ -263,7 +262,7 @@ export const getGitHubUser = async (
       console.log(gitHubUser)
       return res.status(200).json(gitHubUser.data)
     }
-    console.log('–– SUCCESS')
+    console.log('–X FAILURE')
     return res.status(404).send('No GitHub User Found')
   } catch (err) {
     console.log('X FAILURE')

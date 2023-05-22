@@ -18,11 +18,14 @@ export const getUsers = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
+    console.log('GET USERS IN DATABASE')
     const users = await User.find({}).exec()
-    res.status(200).json(users)
-  } catch (error) {
-    next(error)
+    return users
+      ? res.status(200).json(users)
+      : res.status(404).send('No users found.')
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -32,7 +35,7 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('POST to DATABASE')
+    console.log('CREATE USER IN DATABASE')
     let password = await bcrypt.hash(req.body.password, 10)
     const newUser = new User({
       username: req.body.username,
@@ -45,10 +48,13 @@ export const createUser = async (
       pictureURL: req.body.pictureURL,
       created: new Date(),
     })
-    await newUser.save()
-    return res.status(201).json(newUser)
-  } catch (error) {
-    next(error)
+    const user = await newUser.save()
+    return user
+      ? res.status(201).json(user)
+      : res.status(400).send('No user created.')
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -58,20 +64,19 @@ export const getUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
+    console.log('GET USER IN DATABASE')
     let user: any // TD typing
-    if (req.body.username) {
-      user = await User.findOne({ username: req.body.username }).exec()
-    } else {
-      user = await User.findOne({ _id: req.body.user._id }).exec()
-    }
-    if (user !== null) {
-      return res.status(200).json(user)
-    } else {
-      return res.status(404).json(user)
-    }
-  } catch (error) {
-    next(error)
+    // this logic changes the search criterion depending on whether a username or user id was provided
+    // this is due to inconsistent provision of usernames/ids through frontend requests 
+    // (e.g. login vs. user state updates)
+    let criterion = req.body.username
+      ? { username: req.body.username }
+      : { _id: req.body.user._id }
+    user = await User.findOne(criterion).exec()
+    return user ? res.status(200).json(user) : res.status(404).json(user)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -81,22 +86,20 @@ export const updateUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('UPDATE USER IN DB')
-    let searchCriterion: {}
-    if (req.body.user.username) {
-      searchCriterion = { username: req.body.user.username }
-    } else {
-      searchCriterion = { _id: req.body.user._id }
-    }
+    console.log('UPDATE USER IN DB:')
+    let searchCriterion = req.body.user.username
+      ? { username: req.body.user.username }
+      : { _id: req.body.user._id }
     const result = await User.updateOne(
       searchCriterion,
       req.body.update.changes,
-    ) // this should be the res status reason!
-    if (!result) return res.status(400).send('Updte failes')
-    const updatedUser = await User.find(searchCriterion).exec()
-    return res.status(200).json(updatedUser) // TD this just sends a 200 if it finds the user, it should send a 200 if the update was successfull
-  } catch (error) {
-    next(error)
+    )
+    return result
+      ? res.status(200).send('Update successful.')
+      : res.status(400).send('Update failed.')
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -106,29 +109,35 @@ export const deleteUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('DELETE USER IN DATABASE')
+    console.log('DELETE USER IN DATABASE:')
     /* delete corresponding transcations */
-    const deletedTransactionsRequestee = await Transaction.deleteMany({
+    console.log('– DELETE CORRESPONDING TRANSACTIONS')
+    await Transaction.deleteMany({
       requestee: req.body.user._id,
     })
-    const deletedTransactionsRequester = await Transaction.deleteMany({
+    await Transaction.deleteMany({
       requester: req.body.user._id,
     })
 
     /* delete/update corresponidng assets */
-    const deletedAssets = await Asset.deleteMany({
+    console.log('– DELETE/UPDATE CORRESPONDING ASSETS')
+    await Asset.deleteMany({
       owners: [req.body.user._id],
     })
-    const updatedAssets = await Asset.updateMany(
+    await Asset.updateMany(
       { owners: req.body.user._id },
       { $pull: { owners: req.body.user._id } },
     )
 
     /* delete user */
+    console.log('– DELETE USER IN DATABASE')
     const deletedUser = await User.deleteOne({ _id: req.body.user._id })
-    return res.status(200).json(deletedUser)
-  } catch (error) {
-    next(error)
+    return deleteUser
+      ? res.status(200).send('User deleted.')
+      : res.status(400).send('No user deleted.')
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -140,9 +149,10 @@ export const getUserAssets = async (
   try {
     console.log('GET to DATABASE')
     const asset = await Asset.find({ owners: req.body.owner }).exec()
-    res.status(200).json(asset)
-  } catch (error) {
-    next(error)
+    return res.status(200).json(asset)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -164,7 +174,8 @@ export const getUserRequests = async (
       }).exec()
     }
     res.status(200).json(asset)
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
