@@ -105,20 +105,17 @@ export const getTransactionUsers = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
+    console.log('GET TRANSACTION USERS FROM DATABASE:')
     const transactionWithUsers = await Transaction.aggregate([
       {
         /* use transaction id passed from the client to query the correct asset */
         $match: {
           $expr: {
-            $eq: [
-              '$_id',
-              { $toObjectId: req.body.transaction_id },
-            ],
+            $eq: ['$_id', { $toObjectId: req.body.transaction_id }],
           },
         },
       },
-      /* project requestee ids in requestee array to ObjectIds*/
+      /* project requestee ids in requestee array to ObjectIds */
       {
         $addFields: {
           requestee: {
@@ -146,17 +143,17 @@ export const getTransactionUsers = async (
               },
             },
           ],
-          as: 'requester_username',
+          as: 'requester_data',
         },
       },
       {
         $addFields: {
           requester_username: {
-            $arrayElemAt: ['$requester_username.username', 0],
+            $arrayElemAt: ['$requester_data.username', 0],
           },
         },
       },
-      /* aggregrate requestee ids with requestee usernames*/
+      /* aggregrate requestee ids with requestee usernames */
       {
         $lookup: {
           from: 'Users',
@@ -167,7 +164,7 @@ export const getTransactionUsers = async (
       },
       {
         $addFields: {
-          requestee_username: '$requestee_data.username',
+          requestees_username: '$requestee_data.username',
         },
       },
       /* aggregate asset id with asset repo name */
@@ -199,10 +196,14 @@ export const getTransactionUsers = async (
       {
         $project: {
           asset_data: 0,
+          requestee_data: 0,
+          requester_data: 0,
         },
       },
     ]).exec()
-    return res.status(200).json(transactionWithUsers)
+    return transactionWithUsers
+      ? res.status(200).json(transactionWithUsers)
+      : res.status(404).send('No transactions aggregated.')
   } catch (error) {
     next(error)
   }

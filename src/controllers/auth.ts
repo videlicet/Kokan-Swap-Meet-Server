@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Octokit } from 'octokit'
 import nodemailer from 'nodemailer'
-import fetch from 'node-fetch' // node has fetch integrated since 20022, but deploying on render requires it 
+import fetch from 'node-fetch' // node has fetch integrated since 2022, but deploying on render requires it
 
 /* models */
 import User from '../models/userModel.js'
@@ -54,12 +54,114 @@ export const authenticateUser = async (
           })
         }
         console.log('– GET USER FROM DATABASE')
-        // find user in db
-        const user = await User.findOne({ username: authData.username }).exec()
-        if (!user) {
-          return res.status(404).json({ message: 'User not found.' })
-        }
-        return res.status(200).json(user)
+        /* find user in database */
+        // TD modularize
+        const user = await User.aggregate([
+          {
+            /* use user id passed from the client to query the correct user */
+            $match: {
+              $expr: {
+                $eq: ['$username', authData.username],
+              },
+            },
+          },
+          {
+            $addFields: {
+              userId: { $toString: '$_id' },
+            },
+          },
+          /* aggregrate user id with the number of total assets */
+          {
+            $lookup: {
+              from: 'Assets',
+              localField: 'userId',
+              foreignField: 'owners',
+              as: 'assets_total',
+            },
+          },
+          {
+            $addFields: {
+              asset_count: { $size: '$assets_total' },
+            },
+          },
+
+          /* aggregrate user id with the number of pending assets */
+          {
+            $lookup: {
+              from: 'Assets',
+              let: { userId: '$userId' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$status', 'pending'] },
+                        { $in: ['$$userId', '$owners'] },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'assets_pending',
+            },
+          },
+
+          /* aggregrate user id with the number of pending incoming requests */
+          {
+            $lookup: {
+              from: 'Transactions',
+              let: { userId: '$userId' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$status', 'pending'] },
+                        { $in: ['$$userId', '$requestee'] },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'requests_incoming_pending',
+            },
+          },
+
+          /* aggregrate user id with the number of pending outgoing requests */
+          {
+            $lookup: {
+              from: 'Transactions',
+              localField: 'userId',
+              foreignField: 'requester',
+              as: 'requests_outgoing_pending',
+            },
+          },
+
+          {
+            $addFields: {
+              assets_count_pending: { $size: '$assets_pending' },
+              requests_incoming_count_pending: {
+                $size: '$requests_incoming_pending',
+              },
+              requests_outgoing_count_pending: {
+                $size: '$requests_outgoing_pending',
+              },
+            },
+          },
+          {
+            $project: {
+              password: 0,
+              userId: 0,
+              assets_total: 0,
+              assets_pending: 0,
+              requests_incoming_pending: 0,
+              requests_outgoing_pending: 0,
+            },
+          },
+        ]).exec()
+        return user
+          ? res.status(200).json(user[0])
+          : res.status(404).send('No user found.')
       },
     )
   } else {
@@ -98,7 +200,7 @@ export const loginUser = async (
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
         maxAge: 3600000,
       }
-      res.status(200).cookie('token', accessToken, options).json(user)
+      res.status(200).cookie('token', accessToken, options).send('Password correct.')
     } catch (error) {
       return res
         .status(500)
@@ -259,7 +361,6 @@ export const getGitHubUser = async (
     })
     if (gitHubUser) {
       console.log('–– SUCCESS')
-      console.log(gitHubUser)
       return res.status(200).json(gitHubUser.data)
     }
     console.log('–X FAILURE')

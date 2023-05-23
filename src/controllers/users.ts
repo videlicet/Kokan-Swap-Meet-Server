@@ -64,15 +64,119 @@ export const getUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET USER IN DATABASE')
-    let user: any // TD typing
-    // this logic changes the search criterion depending on whether a username or user id was provided
-    // this is due to inconsistent provision of usernames/ids through frontend requests 
-    // (e.g. login vs. user state updates)
+    console.log('getUser: GET USER IN DATABASE')
+    /* this logic changes the search criterion depending on whether a username or user id was provided
+    this is due to inconsistent provision of usernames/ids through frontend requests 
+    (e.g. login vs. user state updates) */
+
     let criterion = req.body.username
-      ? { username: req.body.username }
-      : { _id: req.body.user._id }
-    user = await User.findOne(criterion).exec()
+      ? ['$username', req.body.username]
+      : ['$_id', { $toObjectId: req.body.user._id }]
+
+    const user = await User.aggregate([
+      {
+        /* use user id passed from the client to query the correct user */
+        $match: {
+          $expr: {
+            $eq: criterion,
+          },
+        },
+      },
+      {
+        $addFields: {
+          userId: { $toString: '$_id' },
+        },
+      },
+      /* aggregrate user id with the number of total assets */
+      {
+        $lookup: {
+          from: 'Assets',
+          localField: 'userId',
+          foreignField: 'owners',
+          as: 'assets_total',
+        },
+      },
+      {
+        $addFields: {
+          asset_count: { $size: '$assets_total' },
+        },
+      },
+
+      /* aggregrate user id with the number of pending assets */
+      {
+        $lookup: {
+          from: 'Assets',
+          let: { userId: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$status', 'pending'] },
+                    { $in: ['$$userId', '$owners'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'assets_pending',
+        },
+      },
+
+      /* aggregrate user id with the number of pending incoming requests */
+      {
+        $lookup: {
+          from: 'Transactions',
+          let: { userId: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$status', 'pending'] },
+                    { $in: ['$$userId', '$requestee'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'requests_incoming_pending',
+        },
+      },
+
+      /* aggregrate user id with the number of pending outgoing requests */
+      {
+        $lookup: {
+          from: 'Transactions',
+          localField: 'userId',
+          foreignField: 'requester',
+          as: 'requests_outgoing_pending',
+        },
+      },
+
+      {
+        $addFields: {
+          assets_count_pending: { $size: '$assets_pending' },
+          requests_incoming_count_pending: {
+            $size: '$requests_incoming_pending',
+          },
+          requests_outgoing_count_pending: {
+            $size: '$requests_outgoing_pending',
+          },
+        },
+      },
+      {
+        $project: {
+          password: 0,
+          userId: 0,
+          assets_total: 0,
+          assets_pending: 0,
+          requests_incoming_pending: 0,
+          requests_outgoing_pending: 0,
+        },
+      },
+    ]).exec()
+    console.log(user)
     return user ? res.status(200).json(user) : res.status(404).json(user)
   } catch (err) {
     console.log(err)
@@ -149,7 +253,7 @@ export const getUserAssets = async (
   try {
     console.log('GET to DATABASE')
     const asset = await Asset.find({ owners: req.body.owner }).exec()
-    return res.status(200).json(asset)
+    return asset ? res.status(200).json(asset) : res.status(404).send('No user assets found.')
   } catch (err) {
     console.log(err)
     next(err)
@@ -162,7 +266,7 @@ export const getUserRequests = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
+    console.log('GET USER REQUESTS FROM DATABASE:')
     let asset: any
     if (req.body.query === 'requestee') {
       asset = await Transaction.find({
