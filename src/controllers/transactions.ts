@@ -167,7 +167,8 @@ export const getTransactionUsers = async (
           requestees_username: '$requestee_data.username',
         },
       },
-      /* aggregate asset id with asset repo name */
+
+      /* aggregate asset id with asset */
       {
         $lookup: {
           from: 'Assets',
@@ -176,26 +177,17 @@ export const getTransactionUsers = async (
             {
               $match: { $expr: { $eq: ['$_id', '$$assetId'] } },
             },
-            {
-              $project: {
-                _id: 0,
-                gitHub_repo: 1,
-              },
-            },
           ],
           as: 'asset_data',
         },
       },
       {
         $addFields: {
-          asset_gitHub_repo: {
-            $arrayElemAt: ['$asset_data.gitHub_repo', 0],
-          },
+          asset_data: { $arrayElemAt: ['$asset_data', 0] },
         },
       },
       {
         $project: {
-          asset_data: 0,
           requestee_data: 0,
           requester_data: 0,
         },
