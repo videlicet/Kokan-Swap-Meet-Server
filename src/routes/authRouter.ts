@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { authenticateUser, loginUser, logoutUser, emailVerfication, verifyVerificationCode, getGitHubAccessToken, getGitHubUser, addGitHubCollaborator } from '../controllers/auth.js'
+import { authenticateUser, loginUser, logoutUser, emailVerfication, verifyVerificationCode, getGitHubAccessToken, getGitHubUser, addGitHubCollaborator, getRepository} from '../controllers/auth.js'
 
 const authRouter = Router()
 
@@ -22,6 +22,9 @@ authRouter.route('/gitHub/user')
 
 authRouter.route('/gitHub/addCollaborator')
     .post(addGitHubCollaborator)
+
+authRouter.route('/gitHub/repository')
+    .post(getRepository)
 
 
 export default authRouter

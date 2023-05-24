@@ -12,6 +12,7 @@ import User from '../models/userModel.js'
 
 /* utils */
 import { verificatioEmail } from '../utils/Emails.js'
+import { captureRejectionSymbol } from 'events'
 
 /* mongo DB setup */
 mongoose.connect(process.env.DB_URL)
@@ -200,14 +201,18 @@ export const loginUser = async (
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
         maxAge: 3600000,
       }
-      return res.status(200).cookie('token', accessToken, options).send('Password correct.')
+      return res
+        .status(200)
+        .cookie('token', accessToken, options)
+        .send('Password correct.')
     } catch (error) {
       return res
         .status(500)
         .json({ message: error.message, errors: error.errors })
     }
   } else {
-    return res.status(401).send('Password incorrect.')}
+    return res.status(401).send('Password incorrect.')
+  }
 }
 
 export const logoutUser = async (
@@ -381,7 +386,7 @@ export const addGitHubCollaborator = async (
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
-  console.log('ADD COLLABORATOR TO GITHUB REPO')
+  console.log('ADD COLLABORATOR TO GITHUB REPO:')
   const octokit = new Octokit({
     auth: decoded.access_token, //TD typing
   })
@@ -399,20 +404,57 @@ export const addGitHubCollaborator = async (
   // )
   // let { data } = collaborators
 
-  // console.log(data) 
+  // console.log(data)
   // return res.status(200).json(d ata)
+  try {
+    const data = await octokit.request(
+      'PUT /repos/{owner}/{repo}/collaborators/{username}',
+      {
+        owner: req.body.requesteeGitHub,
+        repo: req.body.gitHubRepo,
+        username: req.body.requesterGitHub,
+        permission: 'pull',
+      },
+    )
 
-  const data =
-    await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
-    owner: req.body.requesteeGitHub,
-    repo: req.body.gitHubRepo,
-    username: req.body.requesterGitHub,
-    permission: 'pull'
-  })
-
-  if (data.status === 200) {
-    let collaborators = await data.json()
-    return res.status(200).json(collaborators)
+    if (data.status === 200) {
+      console.log('– SUCCESFULLY SENT COLLOABORATION INVITATION')
+      let collaborators = await data.json()
+      return res.status(200).json(collaborators)
+    }
+    console.log('–X FAIURE')
+    return res.status(400).json({ message: 'Failure.' })
+  } catch (err) {
+    console.log('X FAILURE')
+    console.log(err)
+    return res.status(404).json({ message: 'Failure.' })
   }
-  return res.status(400)
+}
+
+export const getRepository = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('CHECK IF REPOSITORY EXISTS:')
+  try {
+    const key = req.cookies.access_token.slice(7)
+    const decoded = jwt.verify(key, process.env.SECRET_KEY)
+    const octokit = new Octokit({
+      auth: decoded.access_token, //TD typing
+    })
+    let repo = await octokit.request('GET /repos/{owner}/{repo}', {
+      owner: req.body.owner,
+      repo: req.body.repository,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    })
+    console.log('– REPOSITORY EXISTS.')
+    return res.status(200).json({ message: 'Repository exists.' })
+  } catch (err) {
+    console.log('X FAILURE')
+    console.log(err)
+    return res.status(404).json({ message: 'Repository does not exist.' })
+  }
 }
