@@ -58,7 +58,7 @@ export const authenticateUser = async (
         // TD modularize
         const user = await User.aggregate([
           {
-            /* use user id passed from the client to query the correct user */
+            /* use user id passed  from the client to query the correct user */
             $match: {
               $expr: {
                 $eq: ['$username', authData.username],
@@ -81,11 +81,11 @@ export const authenticateUser = async (
           },
           {
             $addFields: {
-              asset_count: { $size: '$assets_total' },
+              assets_count: { $size: '$assets_total' },
             },
           },
 
-          /* aggregrate user id with the number of pending assets */
+          /* aggregrate user id with the number of assets on offer */
           {
             $lookup: {
               from: 'Assets',
@@ -95,14 +95,14 @@ export const authenticateUser = async (
                   $match: {
                     $expr: {
                       $and: [
-                        { $eq: ['$status', 'pending'] },
+                        { $eq: ['$onOffer', true] },
                         { $in: ['$$userId', '$owners'] },
                       ],
                     },
                   },
                 },
               ],
-              as: 'assets_pending',
+              as: 'assets_offered',
             },
           },
 
@@ -139,7 +139,7 @@ export const authenticateUser = async (
 
           {
             $addFields: {
-              assets_count_pending: { $size: '$assets_pending' },
+              assets_count_offered: { $size: '$assets_offered' },
               requests_incoming_count_pending: {
                 $size: '$requests_incoming_pending',
               },
@@ -153,7 +153,7 @@ export const authenticateUser = async (
               password: 0,
               userId: 0,
               assets_total: 0,
-              assets_pending: 0,
+              assets_offered: 0,
               requests_incoming_pending: 0,
               requests_outgoing_pending: 0,
             },

@@ -65,10 +65,9 @@ export const getUser = async (
 ) => {
   try {
     console.log('getUser: GET USER IN DATABASE')
-    /* this logic changes the search criterion depending on whether a username or user id was provided
-    this is due to inconsistent provision of usernames/ids through frontend requests 
-    (e.g. login vs. user state updates) */
-
+    /* this logic changes the search criterion depending on whether a username or a user id was provided in the body;
+    this is necessary due to inconsistent provision of usernames/ids through frontend requests to this controller
+    (e.g. login -> username vs. user state updates -> id) */
     let criterion = req.body.username
       ? ['$username', req.body.username]
       : ['$_id', { $toObjectId: req.body.user._id }]
@@ -98,11 +97,11 @@ export const getUser = async (
       },
       {
         $addFields: {
-          asset_count: { $size: '$assets_total' },
+          assets_count: { $size: '$assets_total' },
         },
       },
 
-      /* aggregrate user id with the number of pending assets */
+      /* aggregrate user id with the number of assets on offer */
       {
         $lookup: {
           from: 'Assets',
@@ -112,14 +111,14 @@ export const getUser = async (
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ['$status', 'pending'] },
+                    { $eq: ['$onOffer', true] },
                     { $in: ['$$userId', '$owners'] },
                   ],
                 },
               },
             },
           ],
-          as: 'assets_pending',
+          as: 'assets_offered',
         },
       },
 
@@ -156,7 +155,7 @@ export const getUser = async (
 
       {
         $addFields: {
-          assets_count_pending: { $size: '$assets_pending' },
+          assets_count_offered: { $size: '$assets_offered' },
           requests_incoming_count_pending: {
             $size: '$requests_incoming_pending',
           },
@@ -170,7 +169,7 @@ export const getUser = async (
           password: 0,
           userId: 0,
           assets_total: 0,
-          assets_pending: 0,
+          assets_offered: 0,
           requests_incoming_pending: 0,
           requests_outgoing_pending: 0,
         },
