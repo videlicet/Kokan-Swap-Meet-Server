@@ -64,7 +64,6 @@ export const getUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('getUser: GET USER IN DATABASE')
     /* this logic changes the search criterion depending on whether a username or a user id was provided in the body;
     this is necessary due to inconsistent provision of usernames/ids through frontend requests to this controller
     (e.g. login -> username vs. user state updates -> id) */
@@ -175,8 +174,7 @@ export const getUser = async (
         },
       },
     ]).exec()
-    console.log(user)
-    return user ? res.status(200).json(user) : res.status(404).json(user)
+    return Object.keys(user).length !== 0 ? res.status(200).json(user) : res.status(404).json(user)
   } catch (err) {
     console.log(err)
     next(err)
@@ -197,7 +195,7 @@ export const updateUser = async (
       searchCriterion,
       req.body.update.changes,
     )
-    return result
+    return Object.keys(result).length !== 0
       ? res.status(200).send('Update successful.')
       : res.status(400).send('Update failed.')
   } catch (err) {

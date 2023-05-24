@@ -55,10 +55,10 @@ export const authenticateUser = async (
         }
         console.log('– GET USER FROM DATABASE')
         /* find user in database */
-        // TD modularize
+        // TD  modularize
         const user = await User.aggregate([
           {
-            /* use user id passed  from the client to query the correct user */
+            /* use user id passed from the client to query the correct user */
             $match: {
               $expr: {
                 $eq: ['$username', authData.username],
@@ -159,7 +159,7 @@ export const authenticateUser = async (
             },
           },
         ]).exec()
-        return user
+        return Object.keys(user).length !== 0
           ? res.status(200).json(user[0])
           : res.status(404).send('No user found.')
       },
@@ -200,13 +200,14 @@ export const loginUser = async (
         sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
         maxAge: 3600000,
       }
-      res.status(200).cookie('token', accessToken, options).send('Password correct.')
+      return res.status(200).cookie('token', accessToken, options).send('Password correct.')
     } catch (error) {
       return res
         .status(500)
         .json({ message: error.message, errors: error.errors })
     }
-  } else return res.status(401).json({ message: 'Password incorrect.' })
+  } else {
+    return res.status(401).send('Password incorrect.')}
 }
 
 export const logoutUser = async (
@@ -385,33 +386,33 @@ export const addGitHubCollaborator = async (
     auth: decoded.access_token, //TD typing
   })
 
-  /* test: get repo collaborators */
-  let collaborators = await octokit.request(
-    'GET /repos/{owner}/{repo}/collaborators',
-    {
-      owner: req.body.requesteeGitHub,
-      repo: req.body.gitHubRepo,
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    },
-  )
-  let { data } = collaborators
+  // /* test: get repo collaborators */
+  // let collaborators = await octokit.request(
+  //   'GET /repos/{owner}/{repo}/collaborators',
+  //   {
+  //     owner: req.body.requesteeGitHub,
+  //     repo: req.body.gitHubRepo,
+  //     headers: {
+  //       'X-GitHub-Api-Version': '2022-11-28',
+  //     },
+  //   },
+  // )
+  // let { data } = collaborators
 
-  console.log(data)
-  return res.status(200).json(data)
+  // console.log(data) 
+  // return res.status(200).json(d ata)
 
-  // const data =
-  //   await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
-  //   owner: req.body.requesteeGitHub,
-  //   repo: req.body.gitHubRepo,
-  //   username: req.body.requesterGitHub,
-  //   permission: 'pull'
-  // })
+  const data =
+    await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
+    owner: req.body.requesteeGitHub,
+    repo: req.body.gitHubRepo,
+    username: req.body.requesterGitHub,
+    permission: 'pull'
+  })
 
-  // if (data.status === 200) {
-  //   let collaborators = await data.json()
-  //   return res.status(200).json(collaborators)
-  // }
-  // return res.status(400)
+  if (data.status === 200) {
+    let collaborators = await data.json()
+    return res.status(200).json(collaborators)
+  }
+  return res.status(400)
 }
