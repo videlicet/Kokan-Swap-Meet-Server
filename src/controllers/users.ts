@@ -146,8 +146,19 @@ export const getUser = async (
       {
         $lookup: {
           from: 'Transactions',
-          localField: 'userId',
-          foreignField: 'requester',
+          let: { userId: '$userId', requesterId: { $toObjectId: '$requester' }},
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$status', 'pending'] },
+                    { $eq: ['$requester', '$$userId'] }
+                  ],
+                },
+              },
+            },
+          ],
           as: 'requests_outgoing_pending',
         },
       },
@@ -158,7 +169,8 @@ export const getUser = async (
           requests_incoming_count_pending: {
             $size: '$requests_incoming_pending',
           },
-          requests_outgoing_count_pending: {
+          requests_outgoing_count_pending:
+           {
             $size: '$requests_outgoing_pending',
           },
         },
@@ -174,6 +186,7 @@ export const getUser = async (
         },
       },
     ]).exec()
+    console.log(user)
     return Object.keys(user).length !== 0 ? res.status(200).json(user) : res.status(404).json(user)
   } catch (err) {
     console.log(err)

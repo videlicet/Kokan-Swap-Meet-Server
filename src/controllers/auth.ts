@@ -132,8 +132,19 @@ export const authenticateUser = async (
           {
             $lookup: {
               from: 'Transactions',
-              localField: 'userId',
-              foreignField: 'requester',
+              let: { userId: '$userId', requesterId: { $toObjectId: '$requester' }},
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$status', 'pending'] },
+                        { $eq: ['$requester', '$$userId'] }
+                      ],
+                    },
+                  },
+                },
+              ],
               as: 'requests_outgoing_pending',
             },
           },
