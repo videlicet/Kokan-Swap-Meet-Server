@@ -140,6 +140,7 @@ export const getTransactionUsers = async (
               $project: {
                 _id: 0,
                 username: 1,
+                kokans: 1,
               },
             },
           ],
@@ -151,6 +152,7 @@ export const getTransactionUsers = async (
           requester_username: {
             $arrayElemAt: ['$requester_data.username', 0],
           },
+          requester_kokans: { $arrayElemAt: ['$requester_data.kokans', 0] },
         },
       },
       /* aggregrate requestee ids with requestee usernames */

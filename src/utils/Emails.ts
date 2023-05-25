@@ -1,4 +1,4 @@
-export function verificatioEmail(username: string, verificationCode: string) {
+export function verificationEmail(username: string, verificationCode: string) {
   return `<!DOCTYPE html>
     <html>
         <head>
@@ -74,7 +74,7 @@ export function verificatioEmail(username: string, verificationCode: string) {
                             </tr>
                             <tr>
                                 <td>
-                                    <p>Once your account is verified, you'll be able to access all the great features of Kokan.</p>
+                                    <p>This verfication e-mail is valid for 10 minutes. Once your account is verified, you'll be able to access all the great features of Kokan.</p>
                                 </td>
                             </tr>
                         </table>

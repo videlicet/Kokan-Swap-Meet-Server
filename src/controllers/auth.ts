@@ -11,8 +11,7 @@ import fetch from 'node-fetch' // node has fetch integrated since 2022, but depl
 import User from '../models/userModel.js'
 
 /* utils */
-import { verificatioEmail } from '../utils/Emails.js'
-import { captureRejectionSymbol } from 'events'
+import { verificationEmail } from '../utils/Emails.js'
 
 /* mongo DB setup */
 mongoose.connect(process.env.DB_URL)
@@ -259,7 +258,7 @@ export const emailVerfication = async (
     from: process.env.EMAIL_ADDRESS,
     to: req.body.email,
     subject: 'Kokan: Welcome!',
-    html: verificatioEmail(req.body.username, verification_code),
+    html: verificationEmail(req.body.username, verification_code),
   }
   transporter.sendMail(mailOptions, function (error: any, info: any) {
     // TD typing
@@ -279,7 +278,7 @@ export const emailVerfication = async (
     httpOnly: true,
     secure: true,
     sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-    maxAge: 3600000, // TD change maxAge to 10 min
+    maxAge: 600000,
   }
   return res
     .status(200)
@@ -397,26 +396,11 @@ export const addGitHubCollaborator = async (
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
+  /* add collaborator to GitHub Repo*/
   console.log('ADD COLLABORATOR TO GITHUB REPO:')
   const octokit = new Octokit({
     auth: decoded.access_token, //TD typing
   })
-
-  // /* test: get repo collaborators */
-  // let collaborators = await octokit.request(
-  //   'GET /repos/{owner}/{repo}/collaborators',
-  //   {
-  //     owner: req.body.requesteeGitHub,
-  //     repo: req.body.gitHubRepo,
-  //     headers: {
-  //       'X-GitHub-Api-Version': '2022-11-28',
-  //     },
-  //   },
-  // )
-  // let { data } = collaborators
-
-  // console.log(data)
-  // return res.status(200).json(d ata)
   try {
     const data = await octokit.request(
       'PUT /repos/{owner}/{repo}/collaborators/{username}',

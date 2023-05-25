@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose, { ObjectId } from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 
 import bcrypt from 'bcrypt'
@@ -41,8 +41,8 @@ export const createUser = async (
       username: req.body.username,
       password: password,
       email: req.body.email,
-      email_verified: req.body.email_verified,
-      kokans: 0,
+      email_verified: false,
+      kokans: req.body.kokans,
       first_name: '',
       last_name: '',
       pictureURL: req.body.pictureURL,
@@ -146,14 +146,17 @@ export const getUser = async (
       {
         $lookup: {
           from: 'Transactions',
-          let: { userId: '$userId', requesterId: { $toObjectId: '$requester' }},
+          let: {
+            userId: '$userId',
+            requesterId: { $toObjectId: '$requester' },
+          },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
                     { $eq: ['$status', 'pending'] },
-                    { $eq: ['$requester', '$$userId'] }
+                    { $eq: ['$requester', '$$userId'] },
                   ],
                 },
               },
@@ -169,8 +172,7 @@ export const getUser = async (
           requests_incoming_count_pending: {
             $size: '$requests_incoming_pending',
           },
-          requests_outgoing_count_pending:
-           {
+          requests_outgoing_count_pending: {
             $size: '$requests_outgoing_pending',
           },
         },
@@ -186,8 +188,9 @@ export const getUser = async (
         },
       },
     ]).exec()
-    console.log(user)
-    return Object.keys(user).length !== 0 ? res.status(200).json(user) : res.status(404).json(user)
+    return Object.keys(user).length !== 0
+      ? res.status(200).json(user)
+      : res.status(404).json(user)
   } catch (err) {
     console.log(err)
     next(err)
@@ -261,9 +264,17 @@ export const getUserAssets = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
-    const asset = await Asset.find({ owners: req.body.owner }).exec()
-    return asset ? res.status(200).json(asset) : res.status(404).send('No user assets found.')
+    console.log('GET USER ASSETS FROM DATABASE:')
+    /* find user's id in database */
+    console.log('– GET USER FROM DATABASE')
+    const [user] = await User.find({ username: req.body.owner }).exec()
+    const { id } = user
+    /* find assets owned by user in database */
+    console.log('– GET ASSETS FROM DATABASE')
+    const asset = await Asset.find({ owners: id }).exec()
+    return asset
+      ? res.status(200).json(asset)
+      : res.status(404).send('No user assets found.')
   } catch (err) {
     console.log(err)
     next(err)
