@@ -56,6 +56,10 @@ export const authenticateUser = async (
         console.log('– GET USER FROM DATABASE')
         /* find user in database */
         // TD  modularize
+        // try{} catch(err){
+        // console.log(err)
+        // next(err)
+        // }
         const user = await User.aggregate([
           {
             /* use user id passed from the client to query the correct user */
@@ -131,14 +135,17 @@ export const authenticateUser = async (
           {
             $lookup: {
               from: 'Transactions',
-              let: { userId: '$userId', requesterId: { $toObjectId: '$requester' }},
+              let: {
+                userId: '$userId',
+                requesterId: { $toObjectId: '$requester' },
+              },
               pipeline: [
                 {
                   $match: {
                     $expr: {
                       $and: [
                         { $eq: ['$status', 'pending'] },
-                        { $eq: ['$requester', '$$userId'] }
+                        { $eq: ['$requester', '$$userId'] },
                       ],
                     },
                   },
