@@ -1,16 +1,40 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 
-export const authentication = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.cookies.token) {
-      res.status(401).json({ message: 'User not authenticated!' })
-    } else {
-      const payload = jwt.verify(req.cookies.token, process.env.SECRET_KEY)
-      //req.user = payload // TD QQ this might come in handy later on; what is this used for
-      next()
-    }
-  } catch (err) {
-    next(err)
+/* type for authData in jwt.verify() */
+interface JwtPayload {
+  username: string
+  password: string
+}
+
+export const authenticateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.headers.cookie) {
+    console.log('JWT VERIFICATION:')
+    const key = req.cookies.token
+    jwt.verify(
+      key,
+      process.env.SECRET_KEY,
+      async (err, authData: JwtPayload) => {
+        if (err) {
+          console.log('X FAILURE')
+          return res.status(403).json({
+            success: false,
+            message: 'JWT authentication failed',
+          })
+        } else {
+          console.log('– SUCCESS')
+          return next()
+        }
+      },
+    )
+  } else {
+    res.status(403).json({
+      success: false,
+      message: 'Authentication failed',
+    })
   }
 }

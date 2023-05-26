@@ -29,12 +29,6 @@ let transporter = nodemailer.createTransport({
 
 let verificationCodesStore: any = {} // TD typing
 
-/* type for authData in jwt.verify() */
-interface JwtPayload {
-  username: string
-  password: string
-}
-
 export const authenticateUser = async (
   req: Request,
   res: Response,
@@ -43,145 +37,20 @@ export const authenticateUser = async (
   if (req.headers.cookie) {
     console.log('JWT VERIFICATION:')
     const key = req.cookies.token
-    jwt.verify(
-      key,
-      process.env.SECRET_KEY,
-      async (err, authData: JwtPayload) => {
-        if (err) {
-          return res.status(403).json({
-            success: false,
-            message: 'JWT authentication failed',
-          })
-        }
-        console.log('– GET USER FROM DATABASE')
-        /* find user in database */
-        // TD  modularize
-        // try{} catch(err){
-        // console.log(err)
-        // next(err)
-        // }
-        const user = await User.aggregate([
-          {
-            /* use user id passed from the client to query the correct user */
-            $match: {
-              $expr: {
-                $eq: ['$username', authData.username],
-              },
-            },
-          },
-          {
-            $addFields: {
-              userId: { $toString: '$_id' },
-            },
-          },
-          /* aggregrate user id with the number of total assets */
-          {
-            $lookup: {
-              from: 'Assets',
-              localField: 'userId',
-              foreignField: 'owners',
-              as: 'assets_total',
-            },
-          },
-          {
-            $addFields: {
-              assets_count: { $size: '$assets_total' },
-            },
-          },
-
-          /* aggregrate user id with the number of assets on offer */
-          {
-            $lookup: {
-              from: 'Assets',
-              let: { userId: '$userId' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$onOffer', true] },
-                        { $in: ['$$userId', '$owners'] },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'assets_offered',
-            },
-          },
-
-          /* aggregrate user id with the number of pending incoming requests */
-          {
-            $lookup: {
-              from: 'Transactions',
-              let: { userId: '$userId' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$status', 'pending'] },
-                        { $in: ['$$userId', '$requestee'] },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'requests_incoming_pending',
-            },
-          },
-
-          /* aggregrate user id with the number of pending outgoing requests */
-          {
-            $lookup: {
-              from: 'Transactions',
-              let: {
-                userId: '$userId',
-                requesterId: { $toObjectId: '$requester' },
-              },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$status', 'pending'] },
-                        { $eq: ['$requester', '$$userId'] },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'requests_outgoing_pending',
-            },
-          },
-
-          {
-            $addFields: {
-              assets_count_offered: { $size: '$assets_offered' },
-              requests_incoming_count_pending: {
-                $size: '$requests_incoming_pending',
-              },
-              requests_outgoing_count_pending: {
-                $size: '$requests_outgoing_pending',
-              },
-            },
-          },
-          {
-            $project: {
-              password: 0,
-              userId: 0,
-              assets_total: 0,
-              assets_offered: 0,
-              requests_incoming_pending: 0,
-              requests_outgoing_pending: 0,
-            },
-          },
-        ]).exec()
-        return Object.keys(user).length !== 0
-          ? res.status(200).json(user[0])
-          : res.status(404).send('No user found.')
-      },
-    )
+    jwt.verify(key, process.env.SECRET_KEY, async (err) => {
+      if (!err) {
+        console.log('– SUCCESS')
+        return res
+          .status(200)
+          .json({ status: true, message: 'JWT authentication successful' })
+      } else {
+        console.log('X FAILURE')
+        return res.status(403).json({
+          success: false,
+          message: 'JWT authentication failed',
+        })
+      }
+    })
   } else {
     res.status(403).json({
       success: false,
@@ -370,8 +239,6 @@ export const getGitHubUser = async (
   /* verify and decode gitHub access_token cookie */
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
-
-  console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
     auth: decoded.access_token, //TD typing
   })
