@@ -169,6 +169,7 @@ export const getTransactionUsers = async (
           requestees_username: '$requestee_data.username',
         },
       },
+
       /* aggregate asset id with asset */
       {
         $lookup: {

@@ -107,7 +107,7 @@ export const getUser = async (
 
     const [user] = await User.aggregate([
       {
-        /* use user id from client to query user */
+        /* use user id passed from the client to query the correct user */
         $match: {
           $expr: {
             $eq: criterion,
@@ -225,7 +225,7 @@ export const getUser = async (
     console.log(user)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)
-      : res.status(404).send('No user found.')
+      : res.status(404).json(user)
   } catch (err) {
     console.log("X FAILURE")
     console.log(err)
