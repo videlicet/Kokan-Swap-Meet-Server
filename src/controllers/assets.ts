@@ -41,11 +41,91 @@ export const getAsset = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
-    const asset = await Asset.findOne({ _id: req.body.asset._id }).exec()
-    return res.status(200).json(asset)
-  } catch (error) {
-    next(error)
+    console.log('– GET ASSET FROM DATABASE:')
+    //const asset = await Asset.findOne({ _id: req.body.asset._id }).exec()
+    const [asset] = await Asset.aggregate([
+      {
+        /* use asset id passed from client to query asset */
+        $match: {
+          $expr: {
+            $eq: ['$_id', { $toObjectId: req.body.asset._id }],
+          },
+        },
+      },
+      {
+        $addFields: {
+          assetId: { $toString: '$_id' },
+        },
+      },
+      /* aggregrate requester id with requester username after projecting requester id to ObjectId*/
+      {
+        $lookup: {
+          from: 'Users',
+          let: { creatorId: { $toObjectId: '$creator' } },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ['$_id', '$$creatorId'] } },
+            },
+            {
+              $project: {
+                _id: 0,
+                username: 1,
+              },
+            },
+          ],
+          as: 'creator_data',
+        },
+      },
+      {
+        $addFields: {
+          creator_username: {
+            $arrayElemAt: ['$creator_data.username', 0],
+          },
+        },
+      },
+      /* project owners ids in owners array to ObjectIds */
+      {
+        $addFields: {
+          owners_ids: {
+            $map: {
+              input: '$owners',
+              as: 'r',
+              in: { $toObjectId: '$$r' },
+            },
+          },
+        },
+      },
+      /* aggregrate owners ids with owners usernames */
+      {
+        $lookup: {
+          from: 'Users',
+          localField: 'owners_ids',
+          foreignField: '_id',
+          as: 'owners_data',
+        },
+      },
+      {
+        $addFields: {
+          owners_usernames: '$owners_data.username',
+        },
+      },
+      {
+        $project: {
+          assetId: 0,
+          creator_data: 0,
+          owners_ids: 0,
+          owners_data: 0
+        },
+      },
+    ]).exec()
+    console.log('– SUCCESS')
+    return Object.keys(asset).length > 0
+      ? res.status(200).json(asset)
+      : res.status(404).json({ message: 'No asset found.' })
+  } catch (err) {
+    console.log('X FAILURE')
+    console.log(err)
+    next(err)
   }
 }
 

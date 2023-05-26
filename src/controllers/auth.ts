@@ -29,6 +29,12 @@ let transporter = nodemailer.createTransport({
 
 let verificationCodesStore: any = {} // TD typing
 
+/* type for authData in jwt.verify() */
+interface JwtPayload {
+  username: string
+  password: string
+}
+
 export const authenticateUser = async (
   req: Request,
   res: Response,
@@ -52,7 +58,7 @@ export const authenticateUser = async (
         // TD  modularize
         const user = await User.aggregate([
           {
-            /* use user id passed from the client to query the correct user */
+            /* use user id passed from client to query user */
             $match: {
               $expr: {
                 $eq: ['$username', authData.username],
@@ -64,7 +70,7 @@ export const authenticateUser = async (
               userId: { $toString: '$_id' },
             },
           },
-          /* aggregrate user id with the number of total assets */
+          /* aggregrate user id with number of assets */
           {
             $lookup: {
               from: 'Assets',
@@ -79,7 +85,7 @@ export const authenticateUser = async (
             },
           },
 
-          /* aggregrate user id with the number of assets on offer */
+          /* aggregrate user id with number of assets on offer */
           {
             $lookup: {
               from: 'Assets',
@@ -100,7 +106,7 @@ export const authenticateUser = async (
             },
           },
 
-          /* aggregrate user id with the number of pending incoming requests */
+          /* aggregrate user id with number of pending incoming requests */
           {
             $lookup: {
               from: 'Transactions',
@@ -121,18 +127,21 @@ export const authenticateUser = async (
             },
           },
 
-          /* aggregrate user id with the number of pending outgoing requests */
+          /* aggregrate user id with number of pending outgoing requests */
           {
             $lookup: {
               from: 'Transactions',
-              let: { userId: '$userId', requesterId: { $toObjectId: '$requester' }},
+              let: {
+                userId: '$userId',
+                requesterId: { $toObjectId: '$requester' },
+              },
               pipeline: [
                 {
                   $match: {
                     $expr: {
                       $and: [
                         { $eq: ['$status', 'pending'] },
-                        { $eq: ['$requester', '$$userId'] }
+                        { $eq: ['$requester', '$$userId'] },
                       ],
                     },
                   },
@@ -170,9 +179,10 @@ export const authenticateUser = async (
       },
     )
   } else {
-    res.status(403).json({
+    console.log('X FAILURE')
+    return res.status(403).json({
       success: false,
-      message: 'Authentication failed',
+      message: 'JWT authentication failed.',
     })
   }
 }
@@ -182,23 +192,23 @@ export const loginUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log('POST to DATABASE')
+  console.log('GET USER IN DATABASE:')
   /*  find user in db */
   const user = await User.findOne({ username: req.body.username }).exec()
 
   if (!user) {
     return res.status(404).json({ message: 'User not found.' })
   }
-  // compare send password with stored password
+  /* compare send password with stored password */
   const passwordCorrect = await bcrypt.compare(req.body.password, user.password)
   if (user && passwordCorrect == true) {
     try {
-      // create access token
+      /* create access token*/
       let accessToken = jwt.sign(
         { username: req.body.username },
         process.env.SECRET_KEY,
       )
-      // create a response cookie
+      /* create a response cookie*/
       const options = {
         httpOnly: true,
         secure: true,
@@ -224,9 +234,9 @@ export const logoutUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log('CLEAR COOKIE')
+  console.log('CLEAR COOKIE:')
   try {
-    res
+    return res
       .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
       .clearCookie('access_token', {
         path: '/',
@@ -235,6 +245,7 @@ export const logoutUser = async (
       })
       .sendStatus(200)
   } catch (error) {
+    console.log('X FAILURE')
     return res
       .status(500)
       .json({ message: error.message, errors: error.errors })
@@ -256,15 +267,15 @@ export const emailVerfication = async (
   }
   transporter.sendMail(mailOptions, function (error: any, info: any) {
     // TD typing
-    if (error) {
-      console.log(error)
-    } else {
-      console.log('– EMAIL SENT: ' + info.response)
+    if (!error) {
+      console.log('– EMAIL SENT')
       verificationCodesStore = {
         ...verificationCodesStore,
         [`${req.body.username}`]: { verification_code: verification_code },
       }
-      console.log(verificationCodesStore)
+    } else {
+      console.log('X FAILURE')
+      console.log(error)
     }
   })
   /* set cookie with verification code*/
@@ -289,10 +300,17 @@ export const verifyVerificationCode = async (
   const clientVerificationCode = req.cookies.verification_code
   if (verificationCodesStore[req.body.username]) {
     const { verification_code } = verificationCodesStore[req.body.username]
+    console.log('– COMPARE VERIFICATION CODE AND CLIENT VERIFICATION CODE')
     if (verification_code === Number(clientVerificationCode)) {
+      console.log('– SUCCESS')
       return res.status(200).json({ success: true })
-    } else return res.status(400).json({ success: false })
-  } else return res.status(400).json({ success: false })
+    } else {
+      console.log('–X FAILURE')
+      return res.status(400).json({ success: false })
+    }
+  } else {
+    console.log('X FAILURE')
+    return res.status(400).json({ success: false })}
 }
 
 export const getGitHubAccessToken = async (
@@ -341,9 +359,9 @@ export const getGitHubAccessToken = async (
       .cookie('access_token', 'Bearer ' + accessToken, options)
       .send()
   } catch (err) {
-    console.log('X FAILED')
+    console.log('X FAILUR')
     console.log(err)
-    return res.send()
+    return res.status(400).json({message: 'Get GitHub access token failed.'})
   }
 }
 
@@ -357,6 +375,8 @@ export const getGitHubUser = async (
   /* verify and decode gitHub access_token cookie */
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
+
+  console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
     auth: decoded.access_token, //TD typing
   })
@@ -368,7 +388,7 @@ export const getGitHubUser = async (
       },
     })
     if (gitHubUser) {
-      console.log('–– SUCCESS')
+      console.log('– SUCCESS')
       return res.status(200).json(gitHubUser.data)
     }
     console.log('–X FAILURE')

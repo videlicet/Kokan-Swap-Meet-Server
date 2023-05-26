@@ -1,6 +1,6 @@
 import mongoose, { ObjectId } from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
-import jwt from 'jsonwebtoken'
+
 import bcrypt from 'bcrypt'
 
 import User from '../models/userModel.js'
@@ -58,54 +58,20 @@ export const createUser = async (
   }
 }
 
-/* type for authData in jwt.verify() */
-interface JwtPayload {
-  username: string
-  password: string
-}
-
 export const getUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  console.log("GET AGGREGATED USER FROM DATABASE:")
   try {
     /* this logic changes the search criterion depending on whether a username or a user id was provided in the body;
     this is necessary due to inconsistent provision of usernames/ids through frontend requests to this controller
     (e.g. login -> username vs. user state updates -> id) */
-
-
     let criterion = req.body.username
       ? ['$username', req.body.username]
       : ['$_id', { $toObjectId: req.body.user._id }]
 
-      console.log("req.headers: ", req.headers.cookie)
-      console.log("id: ", req.body.user?._id, "username", req.body.username)
-    /* check if cookie present and overwrite search criterion*/
-    if (req.headers.cookie) {
-      console.log('COOKIE PRESENT –> JWT VERIFICATION: ')
-      const key = req.cookies.token
-      jwt.verify(key, process.env.SECRET_KEY, async (err, authData: JwtPayload) => { // TD typing
-        if (!err) {
-          console.log('– SUCCESS')
-          criterion = ['$username', authData.username];
-        } else {
-          console.log('–X FAILURE')
-          return res.status(403).json({
-            success: false,
-            message: 'JWT verification failed.',
-          })
-        }
-      })} else {
-        res.status(403).json({
-          success: false,
-          message: 'X JWT VERFIFICATION FAILURE',
-        })
-      }
-
-
-    const [user] = await User.aggregate([
+    const user = await User.aggregate([
       {
         /* use user id passed from the client to query the correct user */
         $match: {
@@ -222,12 +188,10 @@ export const getUser = async (
         },
       },
     ]).exec()
-    console.log(user)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)
       : res.status(404).json(user)
   } catch (err) {
-    console.log("X FAILURE")
     console.log(err)
     next(err)
   }

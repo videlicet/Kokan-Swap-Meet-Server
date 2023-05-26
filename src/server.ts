@@ -14,7 +14,7 @@ const port = process.env.PORT || 3532
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   next()
-}, cors({ credentials: true, origin: true }))
+}, cors({ credentials: true, origin: true}))
 app.use(express.json())
 app.use(cookieParser())
 
