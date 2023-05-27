@@ -216,6 +216,7 @@ export const updateUser = async (
       ? res.status(200).send('Update successful.')
       : res.status(400).send('Update failed.')
   } catch (err) {
+    console.log('X FAILURE')
     console.log(err)
     next(err)
   }

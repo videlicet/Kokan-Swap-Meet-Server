@@ -270,7 +270,7 @@ export const getTransactionExpiration = async (
         console.log('-> REBATE USER KOKANS')
         const searchCriterion = { _id: id }
         const res = await User.updateOne(searchCriterion, {
-          $inc: { kokans: rebate },
+          $inc: { kokans: rebate, kokans_pending: -rebate },
         }).exec()
         console.log('update res: ', rebate)
         if (res) console.log('SUCCESS')

@@ -14,6 +14,7 @@ const userSchema = new Schema(
     last_name: String,
     pictureURL: String,
     kokans: Number,
+    kokans_pending: Number,
     created: String,
   },
   { collection: 'Users' },
