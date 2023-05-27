@@ -1,5 +1,8 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
+
+/* models */
+import User from '../models/userModel.js'
 import Transaction from '../models/transactionModel.js'
 
 mongoose.connect(process.env.DB_URL)
@@ -198,7 +201,90 @@ export const getTransactionUsers = async (
     return transactionWithUsers
       ? res.status(200).json(transactionWithUsers)
       : res.status(404).send('No transactions aggregated.')
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const getTransactionExpiration = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('GET USER REQUESTS EXPIRATION FROM DATABASE:')
+  console.log('req.body.user._id: ', req.body.user._id)
+  console.log('– GET USER REQUESTS')
+  try {
+    const requests = await Transaction.aggregate([
+      {
+        /* use transaction id passed from the client to query the correct asset */
+        $match: {
+          status: 'pending',
+          requester: req.body.user._id,
+        },
+      },
+    ]).exec()
+
+    console.log('requests: ', requests)
+
+    if (requests) {
+      console.log('– GET REQUEST CREATION DATES (ITERATION):')
+      requests.forEach((request: any) => {
+        // TD typing
+        const dateCreated = new Date(request.created)
+        console.log('dateCreated: ', dateCreated)
+        console.log('–– COMPARE REQUEST CREATION DATE AND EXPIRATION OFFSET:')
+        const expirationOffset = 5
+        const expirationDate = new Date(
+          dateCreated.setUTCDate(dateCreated.getUTCDate() + expirationOffset),
+        )
+        console.log(expirationDate.getTime(), new Date().getTime())
+        if (expirationDate.getTime() > new Date().getTime()) {
+          // !!!!!!!!!!!!!!! has to be < outside of testing
+          console.log('––– SET EXPIRED TRANSACTION STATUS TO "EXPIRED"')
+          updateTransaction(request._id)
+          console.log('––– REBATE KOKANS TO REQUESTER')
+          updateUser(request.requester, request.kokans)
+        }
+      })
+    }
+
+    async function updateTransaction(id: string) {
+      try {
+        console.log('-> SET TRANSACTION STATUS TO "EXPIRED"')
+        const searchCriterion = { _id: id }
+        const res = await Transaction.updateOne(searchCriterion, {
+          status: 'expired',
+        })
+        console.log('update res: ', res)
+        if (res) console.log('SUCCESS')
+        return
+      } catch (err) {
+        console.log('X FAILURE')
+        console.log(err)
+      }
+    }
+
+    async function updateUser(id: string, rebate: number) {
+      try {
+        console.log('-> REBATE USER KOKANS')
+        const searchCriterion = { _id: id }
+        const res = await User.updateOne(searchCriterion, {
+          $inc: { kokans: rebate },
+        }).exec()
+        console.log('update res: ', rebate)
+        if (res) console.log('SUCCESS')
+        return
+      } catch (err) {
+        console.log('X FAILURE')
+        console.log(err)
+      }
+    }
+
+    res.status(200).json(requests)
+  } catch (err) {
+    console.log('X FAILURE')
+    console.log(err)
+    next(err)
   }
 }

@@ -1,8 +1,9 @@
-import mongoose, { ObjectId } from 'mongoose'
+import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 
 import bcrypt from 'bcrypt'
 
+/* models */
 import User from '../models/userModel.js'
 import Asset from '../models/assetModel.js'
 import Transaction from '../models/transactionModel.js'
@@ -288,17 +289,17 @@ export const getUserRequests = async (
 ) => {
   try {
     console.log('GET USER REQUESTS FROM DATABASE:')
-    let asset: any
+    let requests: any
     if (req.body.query === 'requestee') {
-      asset = await Transaction.find({
+      requests = await Transaction.find({
         requestee: req.body.user._id,
       }).exec()
     } else if (req.body.query === 'requester') {
-      asset = await Transaction.find({
+      requests = await Transaction.find({
         requester: req.body.user._id,
       }).exec()
     }
-    res.status(200).json(asset)
+    res.status(200).json(requests)
   } catch (err) {
     console.log(err)
     next(err)
