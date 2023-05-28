@@ -38,7 +38,9 @@ export const createUser = async (
   try {
     console.log('CREATE USER IN DATABASE')
     let password = await bcrypt.hash(req.body.password, 10)
+
     const newUser = new User({
+      _id: new mongoose.Types.ObjectId(),
       username: req.body.username,
       password: password,
       email: req.body.email,
@@ -47,7 +49,7 @@ export const createUser = async (
       first_name: '',
       last_name: '',
       pictureURL: req.body.pictureURL,
-      created: new Date(),
+      created: new Date().toISOString(),
     })
     const user = await newUser.save()
     return user
@@ -251,7 +253,7 @@ export const deleteUser = async (
     /* delete user */
     console.log('– DELETE USER IN DATABASE')
     const deletedUser = await User.deleteOne({ _id: req.body.user._id })
-    return deleteUser
+    return deletedUser
       ? res.status(200).send('User deleted.')
       : res.status(400).send('No user deleted.')
   } catch (err) {

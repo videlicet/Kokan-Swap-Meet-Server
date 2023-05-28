@@ -42,7 +42,6 @@ export const getAsset = async (
 ) => {
   try {
     console.log('– GET ASSET FROM DATABASE:')
-    //const asset = await Asset.findOne({ _id: req.body.asset._id }).exec()
     const [asset] = await Asset.aggregate([
       {
         /* use asset id passed from client to query asset */
