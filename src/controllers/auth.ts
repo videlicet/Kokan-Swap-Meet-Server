@@ -310,7 +310,8 @@ export const verifyVerificationCode = async (
     }
   } else {
     console.log('X FAILURE')
-    return res.status(400).json({ success: false })}
+    return res.status(400).json({ success: false })
+  }
 }
 
 export const getGitHubAccessToken = async (
@@ -361,7 +362,7 @@ export const getGitHubAccessToken = async (
   } catch (err) {
     console.log('X FAILUR')
     console.log(err)
-    return res.status(400).json({message: 'Get GitHub access token failed.'})
+    return res.status(400).json({ message: 'Get GitHub access token failed.'})
   }
 }
 

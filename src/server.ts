@@ -12,9 +12,7 @@ import errorHandler from './middlewares/errorHandler.js'
 const app: Express = express()
 const port = process.env.PORT || 3532
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  next()
-}, cors({ credentials: true, origin: true}))
+app.use(cors({ credentials: true, origin: true }))
 app.use(express.json())
 app.use(cookieParser())
 

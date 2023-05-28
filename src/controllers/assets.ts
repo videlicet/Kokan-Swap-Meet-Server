@@ -151,7 +151,7 @@ export const getSearchedAssets = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
+    console.log('SEARCH ASSETS IN DATABASE:')
     let assets = await Asset.find({
       $or: [
         { title: { $regex: req.body.asset.searchTerm, $options: 'i' } },
@@ -170,7 +170,8 @@ export const getSearchedAssets = async (
       ],
     }).sort({ created: -1 }).exec()
     return res.status(200).json(assets)
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
