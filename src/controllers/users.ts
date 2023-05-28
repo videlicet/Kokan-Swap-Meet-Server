@@ -275,7 +275,7 @@ export const getUserAssets = async (
     const { id } = user
     /* find assets owned by user in database */
     console.log('– GET ASSETS FROM DATABASE')
-    const asset = await Asset.find({ owners: id }).exec()
+    const asset = await Asset.find({ owners: id }).sort({created: -1}).exec()
     return asset
       ? res.status(200).json(asset)
       : res.status(404).send('No user assets found.')
@@ -296,11 +296,11 @@ export const getUserRequests = async (
     if (req.body.query === 'requestee') {
       requests = await Transaction.find({
         requestee: req.body.user._id,
-      }).exec()
+      }).sort({created: -1}).exec()
     } else if (req.body.query === 'requester') {
       requests = await Transaction.find({
         requester: req.body.user._id,
-      }).exec()
+      }).sort({created: -1}).exec()
     }
     res.status(200).json(requests)
   } catch (err) {

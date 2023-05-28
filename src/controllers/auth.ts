@@ -50,7 +50,7 @@ export const authenticateUser = async (
         if (err) {
           return res.status(403).json({
             success: false,
-            message: 'JWT authentication failed',
+            message: 'JWT authentication failed.',
           })
         }
         console.log('– GET USER FROM DATABASE')

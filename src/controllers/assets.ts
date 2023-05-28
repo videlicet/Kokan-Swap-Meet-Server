@@ -6,20 +6,6 @@ mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const getAssets = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    console.log('GET to DATABASE')
-    const users = await Asset.find({}).exec()
-    return res.status(200).json(users)
-  } catch (error) {
-    next(error)
-  }
-}
-
 export const createAsset = async (
   req: Request,
   res: Response,
@@ -116,6 +102,7 @@ export const getAsset = async (
           owners_data: 0
         },
       },
+
     ]).exec()
     console.log('– SUCCESS')
     return Object.keys(asset).length > 0
@@ -181,7 +168,7 @@ export const getSearchedAssets = async (
           },
         },
       ],
-    }).exec()
+    }).sort({ created: -1 }).exec()
     return res.status(200).json(assets)
   } catch (error) {
     next(error)

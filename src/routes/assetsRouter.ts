@@ -1,10 +1,9 @@
 import { Router } from 'express'
-import {  getAssets, createAsset, getAsset, updateAsset, deleteAsset, getSearchedAssets } from '../controllers/assets.js'
+import { createAsset, getAsset, updateAsset, deleteAsset, getSearchedAssets } from '../controllers/assets.js'
 
 const assetsRouter = Router()
 
 assetsRouter.route('/')
-    .get(getAssets)
     .post(createAsset)
 
 assetsRouter.route('/:id')

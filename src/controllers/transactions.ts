@@ -224,7 +224,7 @@ export const getTransactionExpiration = async (
         },
       },
     ]).exec()
-    
+
     if (requests) {
       console.log('– GET REQUEST CREATION DATES (ITERATION):')
       requests.forEach((request: any) => {
