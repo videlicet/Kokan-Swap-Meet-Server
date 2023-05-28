@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTransactions, createTransaction, deleteTransactions, getTransaction, getTransactionExpiration, updateTransaction, deleteTransaction, getTransactionUsers} from '../controllers/transactions.js'
+import { getTransactions, createTransaction, deleteTransactions, getTransaction, updateTransaction, deleteTransaction, getTransactionUsers} from '../controllers/transactions.js'
 
 const transactionsRouter = Router();
 
@@ -10,7 +10,6 @@ transactionsRouter.route('/')
 
 transactionsRouter.route('/:id')
     .get(getTransaction)
-    .post(getTransactionExpiration)
     .put(updateTransaction)
     .delete(deleteTransaction)
 

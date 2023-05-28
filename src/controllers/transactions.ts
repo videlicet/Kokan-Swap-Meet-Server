@@ -224,9 +224,7 @@ export const getTransactionExpiration = async (
         },
       },
     ]).exec()
-
-    console.log('requests: ', requests)
-
+    
     if (requests) {
       console.log('– GET REQUEST CREATION DATES (ITERATION):')
       requests.forEach((request: any) => {
@@ -239,8 +237,7 @@ export const getTransactionExpiration = async (
           dateCreated.setUTCDate(dateCreated.getUTCDate() + expirationOffset),
         )
         console.log(expirationDate.getTime(), new Date().getTime())
-        if (expirationDate.getTime() > new Date().getTime()) {
-          // !!!!!!!!!!!!!!! has to be < outside of testing
+        if (expirationDate.getTime() < new Date().getTime()) {
           console.log('––– SET EXPIRED TRANSACTION STATUS TO "EXPIRED"')
           updateTransaction(request._id)
           console.log('––– REBATE KOKANS TO REQUESTER')
@@ -280,8 +277,7 @@ export const getTransactionExpiration = async (
         console.log(err)
       }
     }
-
-    res.status(200).json(requests)
+    next()
   } catch (err) {
     console.log('X FAILURE')
     console.log(err)
