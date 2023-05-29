@@ -11,13 +11,21 @@ export const createAsset = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log('CREATE ASSET IN DATABASE:')
+  console.group()
   try {
-    console.log('POST to DATABASE')
     const newAsset = new Asset(req.body)
     await newAsset.save()
-    return res.status(201).json(newAsset)
-  } catch (error) {
-    next(error)
+    console.log('COMPLETED')
+    console.groupEnd()
+    return Object.keys(newAsset).length > 0
+      ? res.status(201).json(newAsset)
+      : res.status(400).json({ message: 'Creation failed.' })
+  } catch (err) {
+    console.log('FAILURE')
+    console.log(err)
+    console.groupEnd()
+    next(err)
   }
 }
 
@@ -26,8 +34,9 @@ export const getAsset = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log('GET ASSET FROM DATABASE:')
+  console.group()
   try {
-    console.log('– GET ASSET FROM DATABASE:')
     const [asset] = await Asset.aggregate([
       {
         /* use asset id passed from client to query asset */
@@ -99,18 +108,19 @@ export const getAsset = async (
           assetId: 0,
           creator_data: 0,
           owners_ids: 0,
-          owners_data: 0
+          owners_data: 0,
         },
       },
-
     ]).exec()
-    console.log('– SUCCESS')
+    console.log('SUCCESS')
+    console.groupEnd()
     return Object.keys(asset).length > 0
       ? res.status(200).json(asset)
       : res.status(404).json({ message: 'No asset found.' })
   } catch (err) {
-    console.log('X FAILURE')
+    console.log('FAILURE')
     console.log(err)
+    console.groupEnd()
     next(err)
   }
 }
@@ -120,14 +130,21 @@ export const updateAsset = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log('UPTDATE ASSET IN DATABASE:')
+  console.group()
   try {
-    console.log('PUT to DATABASE')
     const searchCriterion = { _id: req.body.asset.asset_id }
-    await Asset.updateOne(searchCriterion, req.body.update)
-    const updatedAsset = await Asset.find(searchCriterion).exec()
-    return res.status(200).json('Update successfull')
-  } catch (error) {
-    next(error)
+    const updatedAsset = await Asset.updateOne(searchCriterion, req.body.update)
+    console.log('COMPLETED')
+    console.groupEnd()
+    return Object.keys(updatedAsset).length > 0
+      ? res.status(200).json({ message: 'Update successfull.' })
+      : res.status(400).json({ message: 'Update failed.' })
+  } catch (err) {
+    console.log('FAILURE')
+    console.log(err)
+    console.groupEnd()
+    next(err)
   }
 }
 
@@ -136,13 +153,22 @@ export const deleteAsset = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log('DELETE ASSET IN DATABASE:')
+  console.group()
   try {
-    console.log('DELETE to DATABASE')
     const deletedAsset = await Asset.deleteOne({ _id: req.body.asset._id })
-    return res.status(200).send('Delete successfull') // QQ 201?
-  } catch (error) {
-    next(error)
+    console.log('COMPLETED')
+    console.groupEnd()
+    return Object.keys(deletedAsset).length > 0
+      ? res.status(200).json({ message: 'Delete successfull.' })
+      : res.status(400).json({ message: 'Delete failed.' })
+  } catch (err) {
+    console.log('FAILURE')
+    console.log(err)
+    console.groupEnd()
+    next(err)
   }
+  console.groupEnd()
 }
 
 export const getSearchedAssets = async (
@@ -150,8 +176,9 @@ export const getSearchedAssets = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log('SEARCH ASSETS IN DATABASE:')
+  console.group()
   try {
-    console.log('SEARCH ASSETS IN DATABASE:')
     let assets = await Asset.find({
       $or: [
         { title: { $regex: req.body.asset.searchTerm, $options: 'i' } },
@@ -168,10 +195,18 @@ export const getSearchedAssets = async (
           },
         },
       ],
-    }).sort({ created: -1 }).exec()
-    return res.status(200).json(assets)
+    })
+      .sort({ created: -1 })
+      .exec()
+    console.log('COMPLETED')
+    console.groupEnd()
+    return Object.keys(assets).length > 0
+      ? res.status(200).json(assets)
+      : res.status(400).json({ message: 'No assets found.' })
   } catch (err) {
+    console.log('FAILURE')
     console.log(err)
+    console.groupEnd()
     next(err)
   }
 }

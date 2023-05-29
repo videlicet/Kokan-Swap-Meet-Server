@@ -13,8 +13,8 @@ const app: Express = express()
 const port = process.env.PORT || 3532
 
 app.use(cors({ credentials: true, origin: true }))
-app.use(express.json())
 app.use(cookieParser())
+app.use(express.json())
 
 app.use('/assets', assetsRouter)
 app.use('/transactions', transactionsRouter)

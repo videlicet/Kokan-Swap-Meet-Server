@@ -228,7 +228,7 @@ export const getTransactionExpiration = async (
     if (requests) {
       console.log('– GET REQUEST CREATION DATES (ITERATION):')
       requests.forEach((request: any) => {
-        // TD typing
+        // TODO typing
         const dateCreated = new Date(request.created)
         console.log('dateCreated: ', dateCreated)
         console.log('–– COMPARE REQUEST CREATION DATE AND EXPIRATION OFFSET:')

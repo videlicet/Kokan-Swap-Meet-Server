@@ -27,7 +27,7 @@ let transporter = nodemailer.createTransport({
   },
 })
 
-let verificationCodesStore: any = {} // TD typing
+let verificationCodesStore: any = {} // TODO typing
 
 /* type for authData in jwt.verify() */
 interface JwtPayload {
@@ -55,7 +55,7 @@ export const authenticateUser = async (
         }
         console.log('– GET USER FROM DATABASE')
         /* find user in database */
-        // TD  modularize
+        // TODO  modularize
         const user = await User.aggregate([
           {
             /* use user id passed from client to query user */
@@ -266,7 +266,7 @@ export const emailVerfication = async (
     html: verificationEmail(req.body.username, verification_code),
   }
   transporter.sendMail(mailOptions, function (error: any, info: any) {
-    // TD typing
+    // TODO typing
     if (!error) {
       console.log('– EMAIL SENT')
       verificationCodesStore = {
@@ -341,7 +341,7 @@ export const getGitHubAccessToken = async (
     )
     let accessToken = await authentictor.json()
     console.log('– JWT SIGN GITHUB ACCESS TOKEN')
-
+    
     /* jwt sign GitHub access token  */
     accessToken = jwt.sign(
       { access_token: accessToken.access_token },
@@ -379,7 +379,7 @@ export const getGitHubUser = async (
 
   console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
-    auth: decoded.access_token, //TD typing
+    auth: decoded.access_token, // TODO typing
   })
 
   try {
@@ -412,7 +412,7 @@ export const addGitHubCollaborator = async (
   /* add collaborator to GitHub Repo*/
   console.log('ADD COLLABORATOR TO GITHUB REPO:')
   const octokit = new Octokit({
-    auth: decoded.access_token, //TD typing
+    auth: decoded.access_token, //  typing
   })
   try {
     const data = await octokit.request(
@@ -449,7 +449,7 @@ export const getRepository = async (
     const key = req.cookies.access_token.slice(7)
     const decoded = jwt.verify(key, process.env.SECRET_KEY)
     const octokit = new Octokit({
-      auth: decoded.access_token, //TD typing
+      auth: decoded.access_token, // TODO typing
     })
     let repo = await octokit.request('GET /repos/{owner}/{repo}', {
       owner: req.body.owner,
