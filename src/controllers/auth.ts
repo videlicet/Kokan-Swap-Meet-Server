@@ -373,10 +373,9 @@ export const getGitHubUser = async (
 ) => {
   console.log('GET GITHUB USER:')
   console.log('– VERIFY GITHUB JWT ACCESS TOKEN')
-  /* verify and decode gitHub access_token cookie */
+  /* verify and decode gitHub access_token cookie and call gitHub API if successful */
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
-
   console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
     auth: decoded.access_token, // TODO typing
@@ -415,7 +414,7 @@ export const addGitHubCollaborator = async (
     auth: decoded.access_token, //  typing
   })
   try {
-    const data = await octokit.request(
+    const resCollaborators = await octokit.request(
       'PUT /repos/{owner}/{repo}/collaborators/{username}',
       {
         owner: req.body.requesteeGitHub,
@@ -424,18 +423,17 @@ export const addGitHubCollaborator = async (
         permission: 'pull',
       },
     )
-
-    if (data.status === 200) {
+    if (resCollaborators.status === 201) {
       console.log('– SUCCESFULLY SENT COLLOABORATION INVITATION')
-      let collaborators = await data.json()
+      let collaborators = resCollaborators.data
       return res.status(200).json(collaborators)
     }
-    console.log('–X FAIURE')
-    return res.status(400).json({ message: 'Failure.' })
+    console.log('–X FAILURE')
+    return res.status(400).json({ message: 'Invite collaborator failed.' })
   } catch (err) {
-    console.log('X FAILURE')
+    console.log('–FAILURE')
     console.log(err)
-    return res.status(404).json({ message: 'Failure.' })
+    return res.status(404).json({ message: 'Invite collaborator failed.' })
   }
 }
 

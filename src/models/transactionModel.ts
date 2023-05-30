@@ -10,7 +10,7 @@ const transactionSchema = new Schema(
     requester: String,
     requestee: [String],
     created: String,
-    status: String, // 'pending', 'declined', 'accepted'
+    status: String,
   },
   { collection: 'Transactions' },
 )
