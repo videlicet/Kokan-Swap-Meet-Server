@@ -168,7 +168,6 @@ export const getUser = async (
           as: 'requests_outgoing_pending',
         },
       },
-
       {
         $addFields: {
           assets_count_offered: { $size: '$assets_offered' },

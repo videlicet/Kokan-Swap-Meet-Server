@@ -51,7 +51,7 @@ export const getAsset = async (
           assetId: { $toString: '$_id' },
         },
       },
-      /* aggregrate requester id with requester username after projecting requester id to ObjectId*/
+      /* aggregrate creator id with creator username after projecting creator id to ObjectId */
       {
         $lookup: {
           from: 'Users',
@@ -103,10 +103,53 @@ export const getAsset = async (
           owners_usernames: '$owners_data.username',
         },
       },
+      /* cheack if swap request exists by aggregating a transaction creation date */
+      {
+        $lookup: {
+          from: 'Transactions',
+          let: {
+            assetId: { $toString: '$_id' },
+            requesterId: req.body.requester._id,
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$asset_id', '$$assetId'] },
+                    { $eq: ['$requester', '$$requesterId'] },
+                    { $in: ['$status', ['pending', 'accepted']] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                created: 1,
+                status: 1,
+              },
+            },
+          ],
+          as: 'transaction_data',
+        },
+      },
+      {
+        $addFields: {
+          // $arrayElemAt: ['$creator_data.username', 0],
+          transaction_created: {
+            $arrayElemAt: ['$transaction_data.created', 0],
+          },
+          transaction_status: {
+            $arrayElemAt: ['$transaction_data.status', 0],
+          },
+        },
+      },
       {
         $project: {
           assetId: 0,
           creator_data: 0,
+          transaction_data: 0,
           owners_ids: 0,
           owners_data: 0,
         },
@@ -130,7 +173,7 @@ export const updateAsset = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log('UPTDATE ASSET IN DATABASE:')
+  console.log('UPDATE ASSET IN DATABASE:')
   console.group()
   try {
     const searchCriterion = { _id: req.body.asset.asset_id }
