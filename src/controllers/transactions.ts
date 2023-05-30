@@ -15,11 +15,12 @@ export const getTransactions = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
+    console.log('GET TRANSACTIONS IN DATABASE')
     const transactions = await Transaction.find({}).exec()
-    res.status(200).json(transactions)
-  } catch (error) {
-    next(error)
+    return res.status(200).json(transactions)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -29,12 +30,13 @@ export const createTransaction = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('POST to DATABASE')
+    console.log('CREATE TRANSACTION IN DATABASE')
     const newTransaction = new Transaction(req.body.transaction)
     await newTransaction.save()
     return res.status(201).json(newTransaction)
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -44,13 +46,15 @@ export const deleteTransactions = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('DELETE to DATABASE')
-    const deletedTransaction = await Transaction.deleteMany({
+    console.log('DELETE TRANSACTIONS IN DATABASE')
+    const searchCriterion = {
       asset_id: req.body.asset._id,
-    })
+    }
+    const deletedTransaction = await Transaction.deleteMany(searchCriterion)
     return res.status(200).json(deletedTransaction)
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -60,13 +64,16 @@ export const getTransaction = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET to DATABASE')
-    const transaction = await Transaction.findOne({
-      transaction_id: req.body.transaction_id,
-    }).exec() //specify what to search fo
-    res.status(200).json(transaction)
-  } catch (error) {
-    next(error)
+    console.log('FIND TRANSACTION IN DATABASE')
+    const searchCriterion = { _id: req.params.id, status: 'pending' }
+    const transaction = await Transaction.findOne(searchCriterion).exec()
+    console.log('transaction:', transaction)
+    return transaction
+      ? res.status(200).json(transaction)
+      : res.status(404).json({ message: 'Find transaction failed.' })
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -76,13 +83,14 @@ export const updateTransaction = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('PUT to DATABASE')
+    console.log('UPDATE TRANSACTION IN DATABASE')
     const searchCriterion = { _id: req.params.id }
     await Transaction.updateOne(searchCriterion, req.body.transaction)
     const updatedTransaction = await Transaction.find(searchCriterion).exec()
     return res.status(200).json(updatedTransaction)
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -92,13 +100,15 @@ export const deleteTransaction = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('DELETE to DATABASE')
-    const deletedTransaction = await Transaction.deleteOne({
+    console.log('DELETE TRANSACTION IN DATABASE')
+    const searchCriterion = {
       _id: req.params.id,
-    })
+    }
+    const deletedTransaction = await Transaction.deleteOne(searchCriterion)
     return res.status(200).json(deletedTransaction)
-  } catch (error) {
-    next(error)
+  } catch (err) {
+    console.log(err)
+    next(err)
   }
 }
 
@@ -200,8 +210,9 @@ export const getTransactionUsers = async (
     ]).exec()
     return transactionWithUsers
       ? res.status(200).json(transactionWithUsers)
-      : res.status(404).send('No transactions aggregated.')
+      : res.status(404).json({ message: 'No transactions aggregated.' })
   } catch (err) {
+    console.log(err)
     next(err)
   }
 }
@@ -212,7 +223,6 @@ export const getTransactionExpiration = async (
   next: NextFunction,
 ) => {
   console.log('GET USER REQUESTS EXPIRATION FROM DATABASE:')
-  console.log('req.body.user._id: ', req.body.user._id)
   console.log('– GET USER REQUESTS')
   try {
     const requests = await Transaction.aggregate([
@@ -230,13 +240,11 @@ export const getTransactionExpiration = async (
       requests.forEach((request: any) => {
         // TODO typing
         const dateCreated = new Date(request.created)
-        console.log('dateCreated: ', dateCreated)
         console.log('–– COMPARE REQUEST CREATION DATE AND EXPIRATION OFFSET:')
         const expirationOffset = 5
         const expirationDate = new Date(
           dateCreated.setUTCDate(dateCreated.getUTCDate() + expirationOffset),
         )
-        console.log(expirationDate.getTime(), new Date().getTime())
         if (expirationDate.getTime() < new Date().getTime()) {
           console.log('––– SET EXPIRED TRANSACTION STATUS TO "EXPIRED"')
           updateTransaction(request._id)
@@ -253,7 +261,6 @@ export const getTransactionExpiration = async (
         const res = await Transaction.updateOne(searchCriterion, {
           status: 'expired',
         })
-        console.log('update res: ', res)
         if (res) console.log('SUCCESS')
         return
       } catch (err) {
@@ -269,7 +276,6 @@ export const getTransactionExpiration = async (
         const res = await User.updateOne(searchCriterion, {
           $inc: { kokans: rebate, kokans_pending: -rebate },
         }).exec()
-        console.log('update res: ', rebate)
         if (res) console.log('SUCCESS')
         return
       } catch (err) {
