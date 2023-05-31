@@ -93,14 +93,17 @@ export const submitSwapRequest = async (
 ) => {
   console.log('EMAIL NOTIFICATION INCOMING SWAP REQUEST')
   /* query email of owner user */
+  
   const { email } = await User.findOne({
     username: req.body.owner.username,
   }).exec()
+  console.log("email: ", email)
+  console.log("req.body.owner.username: ", req.body.owner.username)
   /* send email */
   let mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: email,
-    subject: 'Kokan: Welcome!',
+    subject: 'Incoming swap request!',
     html: incomingSwapRequestEmail(
       req.body.user.username,
       req.body.owner.username,

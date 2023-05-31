@@ -37,7 +37,7 @@ export const createUser = async (
 ) => {
   try {
     console.log('CREATE USER IN DATABASE')
-    let password = await bcrypt.hash(req.body.password, 10)
+    const password = await bcrypt.hash(req.body.password, 10)
 
     const newUser = new User({
       _id: new mongoose.Types.ObjectId(),
@@ -206,13 +206,15 @@ export const updateUser = async (
 ) => {
   try {
     console.log('UPDATE USER IN DB:')
-    let searchCriterion = req.body.user.username
+    const searchCriterion = req.body.user.username
       ? { username: req.body.user.username }
       : { _id: req.body.user._id }
-    const result = await User.updateOne(
-      searchCriterion,
-      req.body.update.changes,
-    )
+    let changes = req.body.update.changes
+    if (req.body.update.changes.password) {
+      const passwordCrypted = await bcrypt.hash(req.body.password, 10)
+      changes = {password: passwordCrypted}
+    }
+    const result = await User.updateOne(searchCriterion, changes)
     return Object.keys(result).length !== 0
       ? res.status(200).send('Update successful.')
       : res.status(400).send('Update failed.')
@@ -274,7 +276,7 @@ export const getUserAssets = async (
     const { id } = user
     /* find assets owned by user in database */
     console.log('– GET ASSETS FROM DATABASE')
-    const asset = await Asset.find({ owners: id }).sort({created: -1}).exec()
+    const asset = await Asset.find({ owners: id }).sort({ created: -1 }).exec()
     return asset
       ? res.status(200).json(asset)
       : res.status(404).send('No user assets found.')
@@ -295,11 +297,15 @@ export const getUserRequests = async (
     if (req.body.query === 'requestee') {
       requests = await Transaction.find({
         requestee: req.body.user._id,
-      }).sort({created: -1}).exec()
+      })
+        .sort({ created: -1 })
+        .exec()
     } else if (req.body.query === 'requester') {
       requests = await Transaction.find({
         requester: req.body.user._id,
-      }).sort({created: -1}).exec()
+      })
+        .sort({ created: -1 })
+        .exec()
     }
     res.status(200).json(requests)
   } catch (err) {
