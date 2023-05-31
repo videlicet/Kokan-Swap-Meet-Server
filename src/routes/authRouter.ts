@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { authenticateUser, loginUser, logoutUser, emailVerfication, verifyVerificationCode, getGitHubAccessToken, getGitHubUser, addGitHubCollaborator, getRepository} from '../controllers/auth.js'
+import { authenticateUser, loginUser, logoutUser, getGitHubAccessToken, getGitHubUser, addGitHubCollaborator, getRepository} from '../controllers/auth.js'
 
 const authRouter = Router()
 
@@ -7,12 +7,6 @@ authRouter.route('/')
     .get(authenticateUser)
     .post(loginUser)
     .delete(logoutUser)
-
-authRouter.route('/email')
-    .post(emailVerfication)
-
-authRouter.route('/email/verification')
-    .post(verifyVerificationCode)
 
 authRouter.route('/gitHub')
     .get(getGitHubAccessToken)

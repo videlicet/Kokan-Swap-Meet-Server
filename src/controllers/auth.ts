@@ -4,30 +4,16 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Octokit } from 'octokit'
-import nodemailer from 'nodemailer'
 import fetch from 'node-fetch' // node has fetch integrated since 2022, but deploying on render requires it
 
 /* models */
 import User from '../models/userModel.js'
-
-/* utils */
-import { verificationEmail } from '../utils/Emails.js'
 
 /* mongo DB setup */
 mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-/* nodemailer setup */
-let transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE,
-  auth: {
-    user: process.env.EMAIL_ADDRESS,
-    pass: process.env.EMAIL_ADDRESS_PW,
-  },
-})
-
-let verificationCodesStore: any = {} // TODO typing
 
 /* type for authData in jwt.verify() */
 interface JwtPayload {
@@ -252,68 +238,6 @@ export const logoutUser = async (
   }
 }
 
-export const emailVerfication = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  console.log('EMAIL VERIFICATION:')
-  const verification_code = Math.floor(Math.random() * 90000) + 10000
-  let mailOptions = {
-    from: process.env.EMAIL_ADDRESS,
-    to: req.body.email,
-    subject: 'Kokan: Welcome!',
-    html: verificationEmail(req.body.username, verification_code),
-  }
-  transporter.sendMail(mailOptions, function (error: any, info: any) {
-    // TODO typing
-    if (!error) {
-      console.log('– EMAIL SENT')
-      verificationCodesStore = {
-        ...verificationCodesStore,
-        [`${req.body.username}`]: { verification_code: verification_code },
-      }
-    } else {
-      console.log('X FAILURE')
-      console.log(error)
-    }
-  })
-  /* set cookie with verification code*/
-  const options = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-    maxAge: 600000,
-  }
-  return res
-    .status(200)
-    .cookie('verification_code', verification_code, options)
-    .json({ verification_code: verification_code })
-}
-
-export const verifyVerificationCode = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  console.log('GET VERIFICATION CODE: ')
-  const clientVerificationCode = req.cookies.verification_code
-  if (verificationCodesStore[req.body.username]) {
-    const { verification_code } = verificationCodesStore[req.body.username]
-    console.log('– COMPARE VERIFICATION CODE AND CLIENT VERIFICATION CODE')
-    if (verification_code === Number(clientVerificationCode)) {
-      console.log('– SUCCESS')
-      return res.status(200).json({ success: true })
-    } else {
-      console.log('–X FAILURE')
-      return res.status(400).json({ success: false })
-    }
-  } else {
-    console.log('X FAILURE')
-    return res.status(400).json({ success: false })
-  }
-}
-
 export const getGitHubAccessToken = async (
   req: Request,
   res: Response,
@@ -344,7 +268,7 @@ export const getGitHubAccessToken = async (
     
     /* jwt sign GitHub access token  */
     accessToken = jwt.sign(
-      { access_token: accessToken.access_token },
+      { access_token: accessToken.access_token }, // TODO typing
       process.env.SECRET_KEY,
     )
 
@@ -411,7 +335,7 @@ export const addGitHubCollaborator = async (
   /* add collaborator to GitHub Repo*/
   console.log('ADD COLLABORATOR TO GITHUB REPO:')
   const octokit = new Octokit({
-    auth: decoded.access_token, //  typing
+    auth: decoded.access_token, // TODO typing
   })
   try {
     const resCollaborators = await octokit.request(

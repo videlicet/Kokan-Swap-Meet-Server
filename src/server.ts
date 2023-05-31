@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from 'express'
+import express, { Express } from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 
@@ -6,6 +6,7 @@ import assetsRouter from './routes/assetsRouter.js'
 import transactionsRouter from './routes/transactionsRouter.js'
 import usersRouter from './routes/usersRouter.js'
 import authRouter from './routes/authRouter.js'
+import emailRouter from './routes/emailRouter.js'
 
 import errorHandler from './middlewares/errorHandler.js'
 
@@ -20,6 +21,8 @@ app.use('/assets', assetsRouter)
 app.use('/transactions', transactionsRouter)
 app.use('/users', usersRouter)
 app.use('/auth', authRouter)
+app.use('/emails', emailRouter)
+
 
 app.use(errorHandler)
 
