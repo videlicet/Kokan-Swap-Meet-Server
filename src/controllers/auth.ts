@@ -14,7 +14,6 @@ mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-
 /* type for authData in jwt.verify() */
 interface JwtPayload {
   username: string
@@ -265,7 +264,7 @@ export const getGitHubAccessToken = async (
     )
     let accessToken = await authentictor.json()
     console.log('– JWT SIGN GITHUB ACCESS TOKEN')
-    
+
     /* jwt sign GitHub access token  */
     accessToken = jwt.sign(
       { access_token: accessToken.access_token }, // TODO typing
@@ -286,7 +285,7 @@ export const getGitHubAccessToken = async (
   } catch (err) {
     console.log('X FAILUR')
     console.log(err)
-    return res.status(400).json({ message: 'Get GitHub access token failed.'})
+    return res.status(400).json({ message: 'Get GitHub access token failed.' })
   }
 }
 

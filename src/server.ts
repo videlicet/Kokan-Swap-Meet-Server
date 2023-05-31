@@ -16,6 +16,7 @@ const port = process.env.PORT || 3532
 app.use(cors({ credentials: true, origin: true }))
 app.use(cookieParser())
 app.use(express.json())
+app.use(errorHandler)
 
 app.use('/assets', assetsRouter)
 app.use('/transactions', transactionsRouter)
@@ -23,8 +24,6 @@ app.use('/users', usersRouter)
 app.use('/auth', authRouter)
 app.use('/emails', emailRouter)
 
-
-app.use(errorHandler)
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}.`)
