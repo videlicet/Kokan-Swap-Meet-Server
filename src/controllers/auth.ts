@@ -220,6 +220,7 @@ export const logoutUser = async (
   next: NextFunction,
 ) => {
   console.log('CLEAR COOKIE:')
+  /* TODO how can this fail ? no catch necessary*/
   try {
     return res
       .clearCookie('token', { path: '/', sameSite: 'none', secure: true })

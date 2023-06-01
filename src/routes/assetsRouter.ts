@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createAsset, getAsset, updateAsset, deleteAsset, getSearchedAssets } from '../controllers/assets.js'
+import { createAsset, deleteAssets, getAsset, updateAsset, deleteAsset, getSearchedAssets } from '../controllers/assets.js'
 import { JWTAuthentication, gitHubAuthentication } from '../middlewares/authentication.js'
 
 const assetsRouter = Router()
@@ -8,6 +8,7 @@ assetsRouter.use(JWTAuthentication, gitHubAuthentication)
 
 assetsRouter.route('/')
     .post(createAsset)
+    .delete(deleteAssets)
 
 assetsRouter.route('/:id')
     .post( function (req, res, next) {

@@ -29,6 +29,28 @@ export const createAsset = async (
   }
 }
 
+export const deleteAssets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('DELETE ASSETS IN DATABASE')
+  try {
+    const deletedAssets = await Asset.deleteMany({
+      owners: {
+        $size: 1,
+        $all: [req.body.user._id],
+      },
+    })
+    return Object.keys(deletedAssets).length > 0
+      ? res.status(200).json({ message: 'Delete successfull.' })
+      : res.status(400).json({ message: 'Delete failed.' })
+  } catch (err) {
+    console.log(err)
+    next(err)
+  }
+}
+
 export const getAsset = async (
   req: Request,
   res: Response,
