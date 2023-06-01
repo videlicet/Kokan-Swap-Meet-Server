@@ -4,7 +4,7 @@ import { JWTAuthentication, gitHubAuthentication } from '../middlewares/authenti
 
 const emailRouter = Router()
 
-emailRouter.use(JWTAuthentication, gitHubAuthentication)
+emailRouter.use(gitHubAuthentication)
 
 emailRouter.route('/signup/submit')
     .post(emailVerfication)
@@ -13,7 +13,6 @@ emailRouter.route('/signup/verify')
     .post(verifyVerificationCode)
 
 emailRouter.route('/swap/submit')
-    .post(submitSwapRequest)
-
+    .post(JWTAuthentication, submitSwapRequest)
 
 export default emailRouter

@@ -1,5 +1,3 @@
-/* The assetModel defines the data structure for assets */
-
 import mongoose from 'mongoose'
 const { Schema, model } = mongoose
 

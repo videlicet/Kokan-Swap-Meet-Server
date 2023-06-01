@@ -212,7 +212,7 @@ export const updateUser = async (
     let changes = req.body.update.changes
     if (req.body.update.changes.password) {
       const passwordCrypted = await bcrypt.hash(req.body.password, 10)
-      changes = {password: passwordCrypted}
+      changes = { password: passwordCrypted }
     }
     const result = await User.updateOne(searchCriterion, changes)
     return Object.keys(result).length !== 0

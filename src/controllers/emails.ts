@@ -70,12 +70,34 @@ export const verifyVerificationCode = async (
 ) => {
   console.log('GET VERIFICATION CODE: ')
   const clientVerificationCode = req.cookies.verification_code
+  console.log('clientVerificationCode:', clientVerificationCode)
+  console.log(
+    'verificationCodesStore[req.body.username]:',
+    verificationCodesStore[req.body.username],
+  )
   if (verificationCodesStore[req.body.username]) {
     const { verification_code } = verificationCodesStore[req.body.username]
     console.log('– COMPARE VERIFICATION CODE AND CLIENT VERIFICATION CODE')
     if (verification_code === Number(clientVerificationCode)) {
       console.log('– SUCCESS')
-      return res.status(200).json({ success: true })
+      try {
+        console.log('–– UPDATE USER IN DB:')
+        await User.updateOne(
+          { username: req.body.username },
+          { email_verified: true },
+        )
+      } catch (err) {
+        console.log('––X FAILURE')
+        console.log(err)
+      }
+      return res
+        .status(200)
+        .clearCookie('verification_code', {
+          path: '/',
+          sameSite: 'none',
+          secure: true,
+        })
+        .json({ success: true })
     } else {
       console.log('–X FAILURE')
       return res.status(400).json({ success: false })
@@ -93,12 +115,12 @@ export const submitSwapRequest = async (
 ) => {
   console.log('EMAIL NOTIFICATION INCOMING SWAP REQUEST')
   /* query email of owner user */
-  
+
   const { email } = await User.findOne({
     username: req.body.owner.username,
   }).exec()
-  console.log("email: ", email)
-  console.log("req.body.owner.username: ", req.body.owner.username)
+  console.log('email: ', email)
+  console.log('req.body.owner.username: ', req.body.owner.username)
   /* send email */
   let mailOptions = {
     from: process.env.EMAIL_ADDRESS,

@@ -1,5 +1,3 @@
-/* The userModel defines the data structure for users */
-
 import mongoose from 'mongoose'
 const { Schema, model } = mongoose
 

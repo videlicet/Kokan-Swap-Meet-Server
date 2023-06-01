@@ -1,5 +1,3 @@
-/* The transactionModel defines the data structure for transactions */
-
 import mongoose from 'mongoose'
 const { Schema, model } = mongoose
 
