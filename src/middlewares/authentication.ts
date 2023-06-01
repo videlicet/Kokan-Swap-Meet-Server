@@ -16,7 +16,6 @@ export const JWTAuthentication = async (
 ) => {
   console.log('– VERIFY KOKAN JWT ACCESS TOKEN')
   const key = req.cookies.token
-  console.log(key)
   if (!key) {
     res.status(403).json({ message: 'No kokan access token present.' })
   } else {
