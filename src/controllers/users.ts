@@ -1,8 +1,9 @@
 // @ts-nocheck
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
-
 import bcrypt from 'bcrypt'
+
+import { logger } from '../server.js'
 
 /* import models */
 import User from '../models/userModel.js'
@@ -23,13 +24,13 @@ export const getUsers = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET USERS IN DATABASE')
+    logger.verbose('getUsers: GET USERS IN DATABASE')
     const users = await User.find({}).exec()
     return users
       ? res.status(200).json(users)
       : res.status(404).send('No users found.')
   } catch (err) {
-    console.log(err)
+    logger.error(`getUsers: ${err}`)
     next(err)
   }
 }
@@ -40,7 +41,7 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('CREATE USER IN DATABASE')
+    logger.verbose('createUser: CREATE USER IN DATABASE')
     const password = await bcrypt.hash(req.body.password, 10)
 
     const newUser = new User({
@@ -60,23 +61,23 @@ export const createUser = async (
       ? res.status(201).json(user)
       : res.status(400).json({ message: 'No user created.' })
   } catch (err) {
-    console.log(err)
+    logger.error(`createUser: ${err}`)
     next(err)
   }
 }
 
 export const checkUserExists = async (req: Request, res: Response) => {
+  logger.verbose('checkUserExists: GET USER FROM DATABASE')
   try {
     const user = await User.findOne(
       { username: req.params.id },
       '-_id username',
     ).exec()
-    console.log(user)
     return Object.keys(user).length !== 0
       ? res.status(200).json({ message: 'User found.' })
       : res.status(404).json({ message: 'No user found.' })
   } catch (err) {
-    console.log(err)
+    logger.error(`checkUserExists: ${err}`)
   }
 }
 
@@ -85,6 +86,7 @@ export const getUser = async (
   res: Response,
   next: NextFunction,
 ) => {
+  logger.verbose('getUser: GET USER FROM DATABASE')
   try {
     /* search criterion depends on whether a username, a user id,
     or authData from the JWT authentication middleware (default) is present on the req */
@@ -98,7 +100,7 @@ export const getUser = async (
       ? res.status(200).json(user)
       : res.status(404).json(user)
   } catch (err) {
-    console.log(err)
+    logger.error(`getUser: ${err}`)
     next(err)
   }
 }
@@ -109,7 +111,7 @@ export const updateUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('UPDATE USER IN DB:')
+    logger.verbose('updateUser: UPDATE USER IN DB')
     const searchCriterion = req.body.user.username
       ? { username: req.body.user.username }
       : { _id: req.body.user._id }
@@ -123,8 +125,7 @@ export const updateUser = async (
       ? res.status(200).send('Update successful.')
       : res.status(400).send('Update failed.')
   } catch (err) {
-    console.log('X FAILURE')
-    console.log(err)
+    logger.error(`updateUser: ${err}`)
     next(err)
   }
 }
@@ -135,9 +136,9 @@ export const deleteUser = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('DELETE USER IN DATABASE:')
+    logger.verbose('deleteUser: DELETE USER IN DATABASE:')
     /* delete corresponding transcations */
-    console.log('– DELETE CORRESPONDING TRANSACTIONS')
+    logger.verbose('deleteUser: – DELETE CORRESPONDING TRANSACTIONS')
     await Transaction.deleteMany({
       requestee: req.body.user._id,
     })
@@ -146,7 +147,7 @@ export const deleteUser = async (
     })
 
     /* delete/update corresponidng assets */
-    console.log('– DELETE/UPDATE CORRESPONDING ASSETS')
+    logger.verbose('deleteUser: – DELETE/UPDATE CORRESPONDING ASSETS')
     await Asset.deleteMany({
       owners: [req.body.user._id],
     })
@@ -154,15 +155,14 @@ export const deleteUser = async (
       { owners: req.body.user._id },
       { $pull: { owners: req.body.user._id } },
     )
-
     /* delete user */
-    console.log('– DELETE USER IN DATABASE')
+    logger.verbose('deleteUser: – DELETE USER IN DATABASE')
     const deletedUser = await User.deleteOne({ _id: req.body.user._id })
     return deletedUser
       ? res.status(200).send('User deleted.')
       : res.status(400).send('No user deleted.')
   } catch (err) {
-    console.log(err)
+    logger.error(`deleteUser: ${err}`)
     next(err)
   }
 }
@@ -173,19 +173,19 @@ export const getUserAssets = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET USER ASSETS FROM DATABASE:')
+    logger.verbose('getUserAssets: GET USER ASSETS FROM DATABASE:')
     /* find user's id in database */
-    console.log('– GET USER FROM DATABASE')
+    logger.verbose('getUserAssets: – GET USER FROM DATABASE')
     const [user] = await User.find({ username: req.body.owner }).exec()
     const { id } = user
     /* find assets owned by user in database */
-    console.log('– GET ASSETS FROM DATABASE')
+    logger.verbose('getUserAssets: – GET ASSETS FROM DATABASE')
     const asset = await Asset.find({ owners: id }).sort({ created: -1 }).exec()
     return asset
       ? res.status(200).json(asset)
       : res.status(404).send('No user assets found.')
   } catch (err) {
-    console.log(err)
+    logger.error(`getUserAssets: ${err}`)
     next(err)
   }
 }
@@ -196,7 +196,7 @@ export const getUserRequests = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('GET USER REQUESTS FROM DATABASE:')
+    logger.verbose(`getUserRequests: GET USER REQUESTS FROM DATABASE`)
     let requests: any
     if (req.body.query === 'requestee') {
       requests = await Transaction.find({
@@ -211,9 +211,9 @@ export const getUserRequests = async (
         .sort({ created: -1 })
         .exec()
     }
-    res.status(200).json(requests)
+    return res.status(200).json(requests)
   } catch (err) {
-    console.log(err)
+    logger.error(`getUserRequests: ${err}`)
     next(err)
   }
 }

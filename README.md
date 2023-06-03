@@ -24,6 +24,8 @@ Kokan is an online swap meet for digital assets. This repo containes the server 
     * cookie-parser
     * octokit
     * mongoose
+    * winston
+    * express-winston
 
 ## Miscellaneous
 Kokan is Japanese (交換, koukan) for 'barter, exchange', among others.
