@@ -1,14 +1,14 @@
+import { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { Request, Response, NextFunction } from 'express'
 import nodemailer from 'nodemailer'
 
-/* utils */
+/* import utils */
 import { verificationEmail, incomingSwapRequestEmail } from '../utils/Emails.js'
 
-/* models */
+/* import models */
 import User from '../models/userModel.js'
 
-/* mongo DB setup */
+/* mongoose */
 mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
@@ -22,12 +22,12 @@ let transporter = nodemailer.createTransport({
   },
 })
 
+/* temporary store for verification codes */
 let verificationCodesStore: any = {} // TODO typing
 
 export const emailVerfication = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   console.log('EMAIL VERIFICATION:')
   const verification_code = Math.floor(Math.random() * 90000) + 10000
@@ -66,7 +66,6 @@ export const emailVerfication = async (
 export const verifyVerificationCode = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   console.log('GET VERIFICATION CODE: ')
   const clientVerificationCode = req.cookies.verification_code
@@ -111,7 +110,6 @@ export const verifyVerificationCode = async (
 export const submitSwapRequest = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   console.log('EMAIL NOTIFICATION INCOMING SWAP REQUEST')
   /* query email of owner user */

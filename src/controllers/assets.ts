@@ -1,7 +1,13 @@
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
+
+/* import models */
 import Asset from '../models/assetModel.js'
 
+/* import aggregations */
+import { aggregateAssets } from '../aggregations/assetsAggregations.js'
+
+/* mongoose */
 mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
@@ -59,124 +65,7 @@ export const getAsset = async (
   console.log('GET ASSET FROM DATABASE:')
   console.group()
   try {
-    const [asset] = await Asset.aggregate([
-      {
-        /* use asset id passed from client to query asset */
-        $match: {
-          $expr: {
-            $eq: ['$_id', { $toObjectId: req.body.asset._id }],
-          },
-        },
-      },
-      {
-        $addFields: {
-          assetId: { $toString: '$_id' },
-        },
-      },
-      /* aggregrate creator id with creator username after projecting creator id to ObjectId */
-      {
-        $lookup: {
-          from: 'Users',
-          let: { creatorId: { $toObjectId: '$creator' } },
-          pipeline: [
-            {
-              $match: { $expr: { $eq: ['$_id', '$$creatorId'] } },
-            },
-            {
-              $project: {
-                _id: 0,
-                username: 1,
-              },
-            },
-          ],
-          as: 'creator_data',
-        },
-      },
-      {
-        $addFields: {
-          creator_username: {
-            $arrayElemAt: ['$creator_data.username', 0],
-          },
-        },
-      },
-      /* project owners ids in owners array to ObjectIds */
-      {
-        $addFields: {
-          owners_ids: {
-            $map: {
-              input: '$owners',
-              as: 'r',
-              in: { $toObjectId: '$$r' },
-            },
-          },
-        },
-      },
-      /* aggregrate owners ids with owners usernames */
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'owners_ids',
-          foreignField: '_id',
-          as: 'owners_data',
-        },
-      },
-      {
-        $addFields: {
-          owners_usernames: '$owners_data.username',
-        },
-      },
-      /* cheack if swap request exists by aggregating a transaction creation date */
-      {
-        $lookup: {
-          from: 'Transactions',
-          let: {
-            assetId: { $toString: '$_id' },
-            requesterId: req.body.requester._id,
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$asset_id', '$$assetId'] },
-                    { $eq: ['$requester', '$$requesterId'] },
-                    { $in: ['$status', ['pending', 'accepted']] },
-                  ],
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                created: 1,
-                status: 1,
-              },
-            },
-          ],
-          as: 'transaction_data',
-        },
-      },
-      {
-        $addFields: {
-          // $arrayElemAt: ['$creator_data.username', 0],
-          transaction_created: {
-            $arrayElemAt: ['$transaction_data.created', 0],
-          },
-          transaction_status: {
-            $arrayElemAt: ['$transaction_data.status', 0],
-          },
-        },
-      },
-      {
-        $project: {
-          assetId: 0,
-          creator_data: 0,
-          transaction_data: 0,
-          owners_ids: 0,
-          owners_data: 0,
-        },
-      },
-    ]).exec()
+    const asset = await aggregateAssets(req.body.asset._id)
     console.log('SUCCESS')
     console.groupEnd()
     return Object.keys(asset).length > 0

@@ -1,7 +1,8 @@
-/* models */
+/* import models */
 import User from '../models/userModel.js'
 
 export async function aggregateUser(criterion: any) {
+  // TODO typing
   const [user] = await User.aggregate([
     {
       /* use user id passed from client to query user */

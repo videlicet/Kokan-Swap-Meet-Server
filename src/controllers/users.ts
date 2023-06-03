@@ -58,24 +58,23 @@ export const createUser = async (
     const user = await newUser.save()
     return user
       ? res.status(201).json(user)
-      : res.status(400).send('No user created.')
+      : res.status(400).json({ message: 'No user created.' })
   } catch (err) {
     console.log(err)
     next(err)
   }
 }
 
-export const checkUserExists = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const checkUserExists = async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ username: req.params.id }).exec()
+    const user = await User.findOne(
+      { username: req.params.id },
+      '-_id username',
+    ).exec()
     console.log(user)
     return Object.keys(user).length !== 0
       ? res.status(200).json({ message: 'User found.' })
-      : res.status(404).send('No user found.')
+      : res.status(404).json({ message: 'No user found.' })
   } catch (err) {
     console.log(err)
   }
@@ -89,12 +88,12 @@ export const getUser = async (
   try {
     /* search criterion depends on whether a username, a user id,
     or authData from the JWT authentication middleware (default) is present on the req */
-    const criterion = req.body.username
+    const searchCriterion = req.body.username
       ? ['$username', req.body.username]
       : req.body._id
       ? ['$_id', { $toObjectId: req.body.user._id }]
       : ['$username', req.authData.username] // TODO typing
-    const user = await aggregateUser(criterion)
+    const user = await aggregateUser(searchCriterion)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)
       : res.status(404).json(user)

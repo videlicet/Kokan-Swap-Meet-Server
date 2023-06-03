@@ -1,18 +1,20 @@
-import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
+import mongoose from 'mongoose'
 
-/* models */
+/* import models */
 import User from '../models/userModel.js'
 import Transaction from '../models/transactionModel.js'
 
+/* import aggregations */
+import { aggregateTransactions } from '../aggregations/transactionsAggregations.js'
+
+/* mongoose */
 mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
 export const getTransactions = async (
-  req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   try {
     console.log('GET TRANSACTIONS IN DATABASE')
@@ -20,14 +22,12 @@ export const getTransactions = async (
     return res.status(200).json(transactions)
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
 export const createTransaction = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   try {
     console.log('CREATE TRANSACTION IN DATABASE')
@@ -36,14 +36,12 @@ export const createTransaction = async (
     return res.status(201).json(newTransaction)
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
 export const deleteTransactions = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   try {
     console.log('DELETE TRANSACTIONS IN DATABASE')
@@ -54,14 +52,12 @@ export const deleteTransactions = async (
     return res.status(200).json(deletedTransaction)
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
 export const getTransaction = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   try {
     console.log('FIND TRANSACTION IN DATABASE')
@@ -73,14 +69,12 @@ export const getTransaction = async (
       : res.status(404).json({ message: 'Find transaction failed.' })
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
 export const updateTransaction = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   try {
     console.log('UPDATE TRANSACTION IN DATABASE')
@@ -90,7 +84,6 @@ export const updateTransaction = async (
     return res.status(200).json(updatedTransaction)
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
@@ -108,118 +101,27 @@ export const deleteTransaction = async (
     return res.status(200).json(deletedTransaction)
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
 export const getTransactionUsers = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   try {
     console.log('GET TRANSACTION USERS FROM DATABASE:')
-    const transactionWithUsers = await Transaction.aggregate([
-      {
-        /* use transaction id passed from the client to query the correct asset */
-        $match: {
-          $expr: {
-            $eq: ['$_id', { $toObjectId: req.body.transaction_id }],
-          },
-        },
-      },
-      /* project requestee ids in requestee array to ObjectIds */
-      {
-        $addFields: {
-          requestee: {
-            $map: {
-              input: '$requestee',
-              as: 'r',
-              in: { $toObjectId: '$$r' },
-            },
-          },
-        },
-      },
-      /* aggregrate requester id with requester username after projecting requester id to ObjectId*/
-      {
-        $lookup: {
-          from: 'Users',
-          let: { requesterId: { $toObjectId: '$requester' } },
-          pipeline: [
-            {
-              $match: { $expr: { $eq: ['$_id', '$$requesterId'] } },
-            },
-            {
-              $project: {
-                _id: 0,
-                username: 1,
-                kokans: 1,
-              },
-            },
-          ],
-          as: 'requester_data',
-        },
-      },
-      {
-        $addFields: {
-          requester_username: {
-            $arrayElemAt: ['$requester_data.username', 0],
-          },
-          requester_kokans: { $arrayElemAt: ['$requester_data.kokans', 0] },
-        },
-      },
-      /* aggregrate requestee ids with requestee usernames */
-      {
-        $lookup: {
-          from: 'Users',
-          localField: 'requestee',
-          foreignField: '_id',
-          as: 'requestee_data',
-        },
-      },
-      {
-        $addFields: {
-          requestees_username: '$requestee_data.username',
-        },
-      },
-
-      /* aggregate asset id with asset */
-      {
-        $lookup: {
-          from: 'Assets',
-          let: { assetId: { $toObjectId: '$asset_id' } },
-          pipeline: [
-            {
-              $match: { $expr: { $eq: ['$_id', '$$assetId'] } },
-            },
-          ],
-          as: 'asset_data',
-        },
-      },
-      {
-        $addFields: {
-          asset_data: { $arrayElemAt: ['$asset_data', 0] },
-        },
-      },
-      {
-        $project: {
-          requestee_data: 0,
-          requester_data: 0,
-        },
-      },
-    ]).exec()
+    const transactionWithUsers = await aggregateTransactions(req.body.transaction_id)
     return transactionWithUsers
       ? res.status(200).json(transactionWithUsers)
       : res.status(404).json({ message: 'No transactions aggregated.' })
   } catch (err) {
     console.log(err)
-    next(err)
   }
 }
 
 export const getTransactionExpiration = async (
   req: Request,
-  res: Response,
+  res: undefined,
   next: NextFunction,
 ) => {
   console.log('GET USER REQUESTS EXPIRATION FROM DATABASE:')
