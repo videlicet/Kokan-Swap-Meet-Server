@@ -4,13 +4,10 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Octokit } from 'octokit'
-import fetch from 'node-fetch' // node has fetch integrated since 2022, but deploying on render requires it
+import fetch from 'node-fetch' // node has fetch integrated since 2022, but deploying on render requires it (May 2023)
 
 /* import models */
 import User from '../models/userModel.js'
-
-/* import aggregations */
-import { aggregateUser } from '../aggregations/usersAggregations.js'
 
 /* mongo DB setup */
 mongoose.connect(process.env.DB_URL)
@@ -21,20 +18,6 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 interface JwtPayload {
   username: string
   password: string
-}
-
-export const authenticateUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  console.log('– GET USER FROM DATABASE')
-  /* find user in database */
-  const criterion = ['$username', req.authData.username]
-  const user = await aggregateUser(criterion)
-  return Object.keys(user).length !== 0
-    ? res.status(200).json(user)
-    : res.status(404).send('No user found.')
 }
 
 export const loginUser = async (

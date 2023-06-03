@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 
@@ -64,18 +65,35 @@ export const createUser = async (
   }
 }
 
+export const checkUserExists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = await User.findOne({ username: req.params.id }).exec()
+    console.log(user)
+    return Object.keys(user).length !== 0
+      ? res.status(200).json({ message: 'User found.' })
+      : res.status(404).send('No user found.')
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 export const getUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    /* this logic changes the search criterion depending on whether a username or a user id was provided in the body;
-    this is necessary due to inconsistent provision of usernames/ids through frontend requests to this controller function
-    (e.g. login -> username vs. user state updates -> id) */
+    /* search criterion depends on whether a username, a user id,
+    or authData from the JWT authentication middleware (default) is present on the req */
     const criterion = req.body.username
       ? ['$username', req.body.username]
-      : ['$_id', { $toObjectId: req.body.user._id }]
+      : req.body._id
+      ? ['$_id', { $toObjectId: req.body.user._id }]
+      : ['$username', req.authData.username] // TODO typing
     const user = await aggregateUser(criterion)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)

@@ -1,11 +1,10 @@
 import { Router } from 'express'
-import { authenticateUser, loginUser, logoutUser, getGitHubAccessToken, getGitHubUser, addGitHubCollaborator, getRepository} from '../controllers/auth.js'
+import { loginUser, logoutUser, getGitHubAccessToken, getGitHubUser, addGitHubCollaborator, getRepository} from '../controllers/auth.js'
 import { JWTAuthentication, gitHubAuthentication } from '../middlewares/authentication.js'
 
 const authRouter = Router()
 
 authRouter.route('/')
-    .get(JWTAuthentication, authenticateUser)
     .post(gitHubAuthentication, loginUser) 
     .delete(JWTAuthentication, gitHubAuthentication, logoutUser)
 
