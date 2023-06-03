@@ -1,16 +1,23 @@
-// @ts-nocheck
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { Octokit } from 'octokit'
 
-/* type for authData in jwt.verify() */
+/* types  */
 interface JwtPayload {
   username: string
   password: string
 }
 
+interface AccessToken {
+  access_token: string
+}
+
+interface AuthRequest extends Request {
+  authData: any
+}
+
 export const JWTAuthentication = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -28,7 +35,7 @@ export const JWTAuthentication = async (
             message: 'JWT authentication failed.',
           })
         }
-        req.authData = authData
+        req.authData = authData // TODO typing
         next()
       },
     )
@@ -49,7 +56,7 @@ export const gitHubAuthentication = async (
     const decoded = jwt.verify(key, process.env.SECRET_KEY)
     console.log('– CALL GITHUB API:')
     const octokit = new Octokit({
-      auth: decoded.access_token, // TODO typing
+      auth: (decoded as AccessToken).access_token, // TODO typing
     })
     try {
       const res = await octokit.request('GET /user', {

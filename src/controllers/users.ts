@@ -1,4 +1,3 @@
-// @ts-nocheck
 import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcrypt'
@@ -82,7 +81,7 @@ export const checkUserExists = async (req: Request, res: Response) => {
 }
 
 export const getUser = async (
-  req: Request,
+  req: Request & any, // TODO typing
   res: Response,
   next: NextFunction,
 ) => {
@@ -94,7 +93,7 @@ export const getUser = async (
       ? ['$username', req.body.username]
       : req.body._id
       ? ['$_id', { $toObjectId: req.body.user._id }]
-      : ['$username', req.authData.username] // TODO typing
+      : ['$username', req.authData.username] 
     const user = await aggregateUser(searchCriterion)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)

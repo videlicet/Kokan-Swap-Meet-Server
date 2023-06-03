@@ -1,13 +1,17 @@
-// @ts-nocheck
 import { Request, Response, NextFunction } from 'express'
 import mongoose from 'mongoose'
 import { Octokit } from 'octokit'
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import fetch from 'node-fetch' // node has fetch integrated since 2022, but deploying on render requires it (May 2023)
 
 /* import models */
 import User from '../models/userModel.js'
+
+/* types  */
+interface AccessToken {
+  access_token: string
+}
 
 /* mongoose */
 mongoose.connect(process.env.DB_URL)
@@ -42,7 +46,7 @@ export const loginUser = async (req: Request, res: Response) => {
       .cookie('token', accessToken, options)
       .json({ message: 'Password correct.' })
   } else {
-    return res.status(401).json({ message: err.message, errors: err.errors })
+    return res.status(401).json({ message: 'Password incorrect.' })
   }
 }
 
@@ -90,7 +94,7 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
 
     /* jwt sign GitHub access token  */
     accessToken = jwt.sign(
-      { access_token: accessToken.access_token }, // TODO typing
+      { access_token: (accessToken as AccessToken).access_token },
       process.env.SECRET_KEY,
     )
 
@@ -120,7 +124,7 @@ export const getGitHubUser = async (req: Request, res: Response) => {
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
   console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
-    auth: decoded.access_token, // TODO typing
+    auth: (decoded as AccessToken).access_token,
   })
   try {
     const gitHubUser = await octokit.request('GET /user', {
@@ -149,7 +153,7 @@ export const addGitHubCollaborator = async (req: Request, res: Response) => {
   /* add collaborator to GitHub Repo*/
   console.log('ADD COLLABORATOR TO GITHUB REPO:')
   const octokit = new Octokit({
-    auth: decoded.access_token, // TODO typing
+    auth:  (decoded as AccessToken).access_token,
   })
   try {
     const resCollaborators = await octokit.request(
@@ -175,9 +179,12 @@ export const getRepository = async (req: Request, res: Response) => {
   console.log('CHECK IF REPOSITORY EXISTS:')
   try {
     const key = req.cookies.access_token.slice(7)
-    const decoded = jwt.verify(key, process.env.SECRET_KEY)
+    const decoded = jwt.verify(
+      key,
+      process.env.SECRET_KEY,
+    )
     const octokit = new Octokit({
-      auth: decoded.access_token, // TODO typing
+      auth: (decoded as AccessToken).access_token,
     })
     await octokit.request('GET /repos/{owner}/{repo}', {
       owner: req.body.owner,
