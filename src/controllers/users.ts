@@ -3,10 +3,13 @@ import { Request, Response, NextFunction } from 'express'
 
 import bcrypt from 'bcrypt'
 
-/* models */
+/* import models */
 import User from '../models/userModel.js'
 import Asset from '../models/assetModel.js'
 import Transaction from '../models/transactionModel.js'
+
+/* import aggregations */
+import { aggregateUser } from '../aggregations/usersAggregations.js'
 
 /* mongoose */
 mongoose.connect(process.env.DB_URL)
@@ -68,128 +71,12 @@ export const getUser = async (
 ) => {
   try {
     /* this logic changes the search criterion depending on whether a username or a user id was provided in the body;
-    this is necessary due to inconsistent provision of usernames/ids through frontend requests to this controller
+    this is necessary due to inconsistent provision of usernames/ids through frontend requests to this controller function
     (e.g. login -> username vs. user state updates -> id) */
-    let criterion = req.body.username
+    const criterion = req.body.username
       ? ['$username', req.body.username]
       : ['$_id', { $toObjectId: req.body.user._id }]
-
-    const user = await User.aggregate([
-      {
-        /* use user id passed from the client to query the correct user */
-        $match: {
-          $expr: {
-            $eq: criterion,
-          },
-        },
-      },
-      {
-        $addFields: {
-          userId: { $toString: '$_id' },
-        },
-      },
-      /* aggregrate user id with the number of total assets */
-      {
-        $lookup: {
-          from: 'Assets',
-          localField: 'userId',
-          foreignField: 'owners',
-          as: 'assets_total',
-        },
-      },
-      {
-        $addFields: {
-          assets_count: { $size: '$assets_total' },
-        },
-      },
-
-      /* aggregrate user id with the number of assets on offer */
-      {
-        $lookup: {
-          from: 'Assets',
-          let: { userId: '$userId' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$onOffer', true] },
-                    { $in: ['$$userId', '$owners'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'assets_offered',
-        },
-      },
-
-      /* aggregrate user id with the number of pending incoming requests */
-      {
-        $lookup: {
-          from: 'Transactions',
-          let: { userId: '$userId' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$status', 'pending'] },
-                    { $in: ['$$userId', '$requestee'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'requests_incoming_pending',
-        },
-      },
-
-      /* aggregrate user id with the number of pending outgoing requests */
-      {
-        $lookup: {
-          from: 'Transactions',
-          let: {
-            userId: '$userId',
-            requesterId: { $toObjectId: '$requester' },
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$status', 'pending'] },
-                    { $eq: ['$requester', '$$userId'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'requests_outgoing_pending',
-        },
-      },
-      {
-        $addFields: {
-          assets_count_offered: { $size: '$assets_offered' },
-          requests_incoming_count_pending: {
-            $size: '$requests_incoming_pending',
-          },
-          requests_outgoing_count_pending: {
-            $size: '$requests_outgoing_pending',
-          },
-        },
-      },
-      {
-        $project: {
-          password: 0,
-          userId: 0,
-          assets_total: 0,
-          assets_offered: 0,
-          requests_incoming_pending: 0,
-          requests_outgoing_pending: 0,
-        },
-      },
-    ]).exec()
+    const user = await aggregateUser(criterion)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)
       : res.status(404).json(user)

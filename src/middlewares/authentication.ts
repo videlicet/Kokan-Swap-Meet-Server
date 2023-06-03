@@ -28,7 +28,7 @@ export const JWTAuthentication = async (
             message: 'JWT authentication failed.',
           })
         }
-
+        req.authData = authData
         next()
       },
     )

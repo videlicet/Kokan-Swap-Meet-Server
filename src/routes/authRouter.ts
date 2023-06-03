@@ -5,7 +5,7 @@ import { JWTAuthentication, gitHubAuthentication } from '../middlewares/authenti
 const authRouter = Router()
 
 authRouter.route('/')
-    .get(authenticateUser)
+    .get(JWTAuthentication, authenticateUser)
     .post(gitHubAuthentication, loginUser) 
     .delete(JWTAuthentication, gitHubAuthentication, logoutUser)
 
