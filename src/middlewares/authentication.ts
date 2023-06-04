@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { Octokit } from 'octokit'
 
+/* import utils */
+import { logger } from '../utils/Winston.js'
+
 /* types  */
 interface JwtPayload {
   username: string
@@ -21,16 +24,18 @@ export const JWTAuthentication = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log('– VERIFY KOKAN JWT ACCESS TOKEN')
+  logger.verbose('JWTAutentication: VERIFY KOKAN JWT ACCESS TOKEN')
   const key = req.cookies.token
   if (!key) {
-    res.status(403).json({ message: 'No kokan access token present.' })
+    logger.error('JWTAutentication: NO KOKAN JWT ACCESS TOKEN PRESENT')
+    res.status(403).json({ message: 'No kokan JWT access token present.' })
   } else {
     jwt.verify(
       key,
       process.env.SECRET_KEY,
       async (err, authData: JwtPayload) => {
         if (err) {
+          logger.error(`JWTAuthentication: ${err}`)
           return res.status(403).json({
             message: 'JWT authentication failed.',
           })
@@ -47,26 +52,26 @@ export const gitHubAuthentication = async (
   res: Response,
   next: NextFunction,
 ) => {
+  logger.verbose('gitHubAuthentication: VERIFY GITHUB JWT ACCESS TOKEN')
   if (!req.cookies.access_token) {
-    res.status(403).json({ message: 'No GitHub access token present.' })
+    logger.error('gitHubAuthentication: NO GITHUB JWT ACCESS TOKEN PRESENT')
+    res.status(403).json({ message: 'No GitHub JWT access token present.' })
   } else {
-    console.log('– VERIFY GITHUB JWT ACCESS TOKEN')
     /* verify and decode gitHub access_token cookie and call gitHub API if successful */
     const key = req.cookies.access_token.slice(7)
     const decoded = jwt.verify(key, process.env.SECRET_KEY)
-    console.log('– CALL GITHUB API:')
     const octokit = new Octokit({
       auth: (decoded as AccessToken).access_token, // TODO typing
     })
     try {
-      const res = await octokit.request('GET /user', {
+      await octokit.request('GET /user', {
         headers: {
           'X-GitHub-Api-Version': '2022-11-28',
         },
       })
       next()
     } catch (err) {
-      console.log(err)
+      logger.error(`gitHubAuthentication: ${err}`)
     }
   }
 }

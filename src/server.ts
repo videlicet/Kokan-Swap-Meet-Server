@@ -4,45 +4,22 @@ import cookieParser from 'cookie-parser'
 import winston from 'winston'
 import expressWinston from 'express-winston'
 
+/* import routers */
 import assetsRouter from './routes/assetsRouter.js'
 import transactionsRouter from './routes/transactionsRouter.js'
 import usersRouter from './routes/usersRouter.js'
 import authRouter from './routes/authRouter.js'
 import emailRouter from './routes/emailRouter.js'
 
+/* import middlewares */
 import errorHandler from './middlewares/errorHandler.js'
+
+/* import utils */
+import {logger, format} from './utils/Winston.js'
 
 const app: Express = express()
 const port = process.env.PORT || 3532
 
-/* winston */
-const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  verbose: 'grey',
-  debug: 'white',
-}
-
-winston.addColors(colors)
-
-const format = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
-  ),
-)
-
-export const logger = winston.createLogger({
-  level: 'debug',
-  format: format,
-  defaultMeta: { service: 'server' },
-})
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({}))
-}
 
 /* middlewares */
 app.use(

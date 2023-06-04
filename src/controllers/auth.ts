@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
 import mongoose from 'mongoose'
 import { Octokit } from 'octokit'
-import jwt, { JwtPayload } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import fetch from 'node-fetch' // node has fetch integrated since 2022, but deploying on render requires it (May 2023)
+
+/* import utils */
+import { logger } from '../utils/Winston.js'
 
 /* import models */
 import User from '../models/userModel.js'
@@ -19,15 +22,17 @@ const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
 export const loginUser = async (req: Request, res: Response) => {
-  console.log('GET USER IN DATABASE:')
+  logger.verbose('loginUser: GET USER IN DATABASE:')
   /*  find user in db */
   const user = await User.findOne({ username: req.body.username }).exec()
 
   if (!user) {
+    logger.error('loginUser: GET USER IN DATABASE: FAILED')
     return res.status(404).json({ message: 'User not found.' })
   }
   /* compare send password with stored password */
   const passwordCorrect = await bcrypt.compare(req.body.password, user.password)
+  logger.verbose('loginUser: – CHECK PASSWORD')
   if (user && passwordCorrect == true) {
     /* create access token*/
     let accessToken = jwt.sign(
@@ -46,30 +51,25 @@ export const loginUser = async (req: Request, res: Response) => {
       .cookie('token', accessToken, options)
       .json({ message: 'Password correct.' })
   } else {
+    logger.error('loginUser: – CHECK PASSWORD: FAILED')
     return res.status(401).json({ message: 'Password incorrect.' })
   }
 }
 
 export const logoutUser = async (req: Request, res: Response) => {
-  console.log('CLEAR COOKIE:')
-  /* TODO how can this fail ? no catch necessary*/
-  try {
-    return res
-      .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
-      .clearCookie('access_token', {
-        path: '/',
-        sameSite: 'none',
-        secure: true,
-      })
-      .sendStatus(200)
-  } catch (err) {
-    console.log('X FAILURE')
-    return res.status(500).json({ message: err.message, errors: err.errors })
-  }
+  logger.verbose('logoutUser: CLEAR COOKIE')
+  return res
+    .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
+    .clearCookie('access_token', {
+      path: '/',
+      sameSite: 'none',
+      secure: true,
+    })
+    .sendStatus(200)
 }
 
 export const getGitHubAccessToken = async (req: Request, res: Response) => {
-  console.log('GET GITHUB ACCESS TOKEN:')
+  logger.verbose('getGitHubAccessToken: GET GITHUB ACCESS TOKEN:')
   const params =
     '?client_id=' +
     process.env.GITHUB_CLIENT_ID +
@@ -79,7 +79,6 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
     req.query.code
   try {
     /* request GitHub access token  */
-    console.log('– REQUEST GITHUB ACCESS TOKEN')
     const authentictor = await fetch(
       `https://github.com/login/oauth/access_token${params}`,
       {
@@ -90,7 +89,7 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
       },
     )
     let accessToken = await authentictor.json()
-    console.log('– JWT SIGN GITHUB ACCESS TOKEN')
+    logger.verbose('getGitHubAccessToken: – JWT SIGN GITHUB ACCESS TOKEN')
 
     /* jwt sign GitHub access token  */
     accessToken = jwt.sign(
@@ -99,7 +98,7 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
     )
 
     /* create a response cookie */
-    console.log('– SEND RESPONSE COOKIE')
+    logger.verbose('getGitHubAccessToken: – SEND RESPONSE COOKIE')
     const options = {
       httpOnly: true,
       secure: true,
@@ -110,22 +109,21 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
       .cookie('access_token', 'Bearer ' + accessToken, options)
       .send()
   } catch (err) {
-    console.log('X FAILUR')
-    console.log(err)
+    logger.error(`getGitHubAccessToken: ${err}`)
     return res.status(400).json({ message: err.message, errors: err.errors })
   }
 }
 
 export const getGitHubUser = async (req: Request, res: Response) => {
-  console.log('GET GITHUB USER:')
-  console.log('– VERIFY GITHUB JWT ACCESS TOKEN')
+  logger.verbose('getGitHubUser: GET GITHUB USER:')
   /* verify and decode gitHub access_token cookie and call gitHub API if successful */
+  logger.verbose('getGitHubUser: – VERIFY GITHUB JWT ACCESS TOKEN')
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
-  console.log('– CALL GITHUB API:')
   const octokit = new Octokit({
     auth: (decoded as AccessToken).access_token,
   })
+  logger.verbose(`getGitHubUser: GET GITHUB USER FROM GITHUB`)
   try {
     const gitHubUser = await octokit.request('GET /user', {
       headers: {
@@ -133,28 +131,28 @@ export const getGitHubUser = async (req: Request, res: Response) => {
       },
     })
     if (gitHubUser) {
-      console.log('– SUCCESS')
       return res.status(200).json(gitHubUser.data)
     }
-    console.log('–X FAILURE')
-    return res.status(404).send('No GitHub User Found')
+    logger.error(`getGitHubUser: GET GITHUB USER FROM GITHUB: FAILED`)
+    return res.status(404).json({ message: 'No GitHub user Found' })
   } catch (err) {
-    console.log('X FAILURE')
-    console.log(err)
+    logger.error(`getGitHubUser: ${err}`)
     return res.status(404).json({ message: err.message, errors: err.errors })
   }
 }
 
 export const addGitHubCollaborator = async (req: Request, res: Response) => {
+  logger.verbose('addGitHubCollborator: ADD COLLABORATOR TO GITHUB REPO:')
   /* verify and decode gitHub access_token cookie */
+  logger.verbose('addGitHubCollborator: – VERIFY GITHUB JWT ACCESS TOKEN')
   const key = req.cookies.access_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
   /* add collaborator to GitHub Repo*/
-  console.log('ADD COLLABORATOR TO GITHUB REPO:')
   const octokit = new Octokit({
-    auth:  (decoded as AccessToken).access_token,
+    auth: (decoded as AccessToken).access_token,
   })
+  logger.verbose('addGitHubCollborator: – ADD COLLABORATOR TO GITHUB REPO')
   try {
     const resCollaborators = await octokit.request(
       'PUT /repos/{owner}/{repo}/collaborators/{username}',
@@ -165,24 +163,19 @@ export const addGitHubCollaborator = async (req: Request, res: Response) => {
         permission: 'pull',
       },
     )
-    console.log('– SUCCESFULLY SENT COLLOABORATION INVITATION')
     const collaborators = resCollaborators.data
     return res.status(200).json(collaborators)
   } catch (err) {
-    console.log('–FAILURE')
-    console.log(err)
+    logger.error(`addGitHubCollaborator: ${err}`)
     return res.status(404).json({ message: err.message, errors: err.errors })
   }
 }
 
 export const getRepository = async (req: Request, res: Response) => {
-  console.log('CHECK IF REPOSITORY EXISTS:')
+  logger.verbose('getRepository: CHECK IF REPOSITORY EXISTS')
   try {
     const key = req.cookies.access_token.slice(7)
-    const decoded = jwt.verify(
-      key,
-      process.env.SECRET_KEY,
-    )
+    const decoded = jwt.verify(key, process.env.SECRET_KEY)
     const octokit = new Octokit({
       auth: (decoded as AccessToken).access_token,
     })
@@ -193,11 +186,9 @@ export const getRepository = async (req: Request, res: Response) => {
         'X-GitHub-Api-Version': '2022-11-28',
       },
     })
-    console.log('– REPOSITORY EXISTS.')
     return res.status(200).json({ message: 'Repository exists.' })
   } catch (err) {
-    console.log('X FAILURE')
-    console.log(err)
+    logger.error(`getRepository: ${err}`)
     return res.status(404).json({ message: err.message, errors: err.errors })
   }
 }

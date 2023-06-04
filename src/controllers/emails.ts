@@ -3,6 +3,9 @@ import mongoose from 'mongoose'
 import nodemailer from 'nodemailer'
 
 /* import utils */
+import { logger } from '../utils/Winston.js'
+
+/* import utils */
 import { verificationEmail, incomingSwapRequestEmail } from '../utils/Emails.js'
 
 /* import models */
@@ -25,11 +28,8 @@ let transporter = nodemailer.createTransport({
 /* temporary store for verification codes */
 let verificationCodesStore: any = {} // TODO typing
 
-export const emailVerfication = async (
-  req: Request,
-  res: Response,
-) => {
-  console.log('EMAIL VERIFICATION:')
+export const emailVerfication = async (req: Request, res: Response) => {
+  logger.verbose('emailVerification: EMAIL VERIFICATION:')
   const verification_code = Math.floor(Math.random() * 90000) + 10000
   let mailOptions = {
     from: process.env.EMAIL_ADDRESS,
@@ -40,54 +40,46 @@ export const emailVerfication = async (
   transporter.sendMail(mailOptions, function (err: any, info: any) {
     // TODO typing
     if (!err) {
-      console.log('– EMAIL SENT')
+      logger.verbose('emailVerification: – EMAIL SENT')
       verificationCodesStore = {
         ...verificationCodesStore,
         [`${req.body.username}`]: { verification_code: verification_code },
       }
+      /* set cookie with verification code*/
+      const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
+        maxAge: 600000,
+      }
+      return res
+        .status(200)
+        .cookie('verification_code', verification_code, options)
+        .json({ verification_code: verification_code })
     } else {
-      console.log('X FAILURE')
-      console.log(err)
+      logger.error(`emailVerification: ${err}`)
+      return res.status(500).json({message: "Sending email verification failed."})
     }
   })
-  /* set cookie with verification code*/
-  const options = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
-    maxAge: 600000,
-  }
-  return res
-    .status(200)
-    .cookie('verification_code', verification_code, options)
-    .json({ verification_code: verification_code })
 }
 
-export const verifyVerificationCode = async (
-  req: Request,
-  res: Response,
-) => {
-  console.log('GET VERIFICATION CODE: ')
+export const verifyVerificationCode = async (req: Request, res: Response) => {
+  logger.verbose('verifyVerificationCode: GET VERIFICATION CODE:')
   const clientVerificationCode = req.cookies.verification_code
-  console.log('clientVerificationCode:', clientVerificationCode)
-  console.log(
-    'verificationCodesStore[req.body.username]:',
-    verificationCodesStore[req.body.username],
-  )
   if (verificationCodesStore[req.body.username]) {
     const { verification_code } = verificationCodesStore[req.body.username]
-    console.log('– COMPARE VERIFICATION CODE AND CLIENT VERIFICATION CODE')
+    logger.verbose(
+      'verifyVerificationCode: – COMPARE VERIFICATION CODE AND CLIENT VERIFICATION CODE',
+    )
     if (verification_code === Number(clientVerificationCode)) {
-      console.log('– SUCCESS')
       try {
-        console.log('–– UPDATE USER IN DB:')
+        logger.verbose('verifyVerificationCode: –– UPDATE USER IN DB:')
         await User.updateOne(
           { username: req.body.username },
           { email_verified: true },
         )
       } catch (err) {
-        console.log('––X FAILURE')
-        console.log(err)
+        logger.error(`verifyVerificationCode: ${err}`)
       }
       return res
         .status(200)
@@ -98,27 +90,21 @@ export const verifyVerificationCode = async (
         })
         .json({ success: true })
     } else {
-      console.log('–X FAILURE')
+      logger.error('verifyVerificationCode: – VERIFICATION CODE INVALID')
       return res.status(400).json({ success: false })
     }
   } else {
-    console.log('X FAILURE')
+    logger.error('verifyVerificationCode: – NO VERIFICATION CODE PRESENT')
     return res.status(400).json({ success: false })
   }
 }
 
-export const submitSwapRequest = async (
-  req: Request,
-  res: Response,
-) => {
-  console.log('EMAIL NOTIFICATION INCOMING SWAP REQUEST')
+export const submitSwapRequest = async (req: Request, res: Response) => {
+  logger.verbose('submitSwapRequest: EMAIL NOTIFICATION INCOMING SWAP REQUEST:')
   /* query email of owner user */
-
   const { email } = await User.findOne({
     username: req.body.owner.username,
   }).exec()
-  console.log('email: ', email)
-  console.log('req.body.owner.username: ', req.body.owner.username)
   /* send email */
   let mailOptions = {
     from: process.env.EMAIL_ADDRESS,
@@ -133,10 +119,9 @@ export const submitSwapRequest = async (
   transporter.sendMail(mailOptions, function (err: any, info: any) {
     // TODO typing
     if (!err) {
-      console.log('– EMAIL SENT')
+      logger.verbose('submitSwapRequest: – EMAIL SENT')
     } else {
-      console.log('X FAILURE')
-      console.log(err)
+      logger.error(`submitSwapRequest: ${err}`)
     }
   })
   return res.status(200).json({ message: 'Email dispatched.' })

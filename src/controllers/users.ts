@@ -2,7 +2,8 @@ import mongoose from 'mongoose'
 import { Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcrypt'
 
-import { logger } from '../server.js'
+/* import utils */
+import { logger } from '../utils/Winston.js'
 
 /* import models */
 import User from '../models/userModel.js'
@@ -93,7 +94,7 @@ export const getUser = async (
       ? ['$username', req.body.username]
       : req.body._id
       ? ['$_id', { $toObjectId: req.body.user._id }]
-      : ['$username', req.authData.username] 
+      : ['$username', req.authData.username]
     const user = await aggregateUser(searchCriterion)
     return Object.keys(user).length !== 0
       ? res.status(200).json(user)

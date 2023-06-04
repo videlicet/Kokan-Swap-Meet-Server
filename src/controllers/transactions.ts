@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import mongoose from 'mongoose'
 
+/* import utils */
+import { logger } from '../utils/Winston.js'
+
 /* import models */
 import User from '../models/userModel.js'
 import Transaction from '../models/transactionModel.js'
@@ -13,109 +16,89 @@ mongoose.connect(process.env.DB_URL)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
-export const getTransactions = async (
-  res: Response,
-) => {
+export const getTransactions = async (res: Response) => {
   try {
-    console.log('GET TRANSACTIONS IN DATABASE')
+    logger.verbose('getTransactions: GET TRANSACTIONS IN DATABASE')
     const transactions = await Transaction.find({}).exec()
     return res.status(200).json(transactions)
   } catch (err) {
-    console.log(err)
+    logger.error(`getTransactions: ${err}`)
   }
 }
 
-export const createTransaction = async (
-  req: Request,
-  res: Response,
-) => {
+export const createTransaction = async (req: Request, res: Response) => {
   try {
-    console.log('CREATE TRANSACTION IN DATABASE')
+    logger.verbose('createTransaction: CREATE TRANSACTION IN DATABASE')
     const newTransaction = new Transaction(req.body.transaction)
     await newTransaction.save()
     return res.status(201).json(newTransaction)
   } catch (err) {
-    console.log(err)
+    logger.error(`createTransaction: ${err}`)
   }
 }
 
-export const deleteTransactions = async (
-  req: Request,
-  res: Response,
-) => {
+export const deleteTransactions = async (req: Request, res: Response) => {
   try {
-    console.log('DELETE TRANSACTIONS IN DATABASE')
+    logger.verbose('deleteTransactions: DELETE TRANSACTIONS IN DATABASE')
     const searchCriterion = {
       asset_id: req.body.asset._id,
     }
     const deletedTransaction = await Transaction.deleteMany(searchCriterion)
     return res.status(200).json(deletedTransaction)
   } catch (err) {
-    console.log(err)
+    logger.error(`deleteTransactions: ${err}`)
   }
 }
 
-export const getTransaction = async (
-  req: Request,
-  res: Response,
-) => {
+export const getTransaction = async (req: Request, res: Response) => {
   try {
-    console.log('FIND TRANSACTION IN DATABASE')
+    logger.verbose('getTransaction: FIND TRANSACTION IN DATABASE')
     const searchCriterion = { _id: req.params.id, status: 'pending' }
     const transaction = await Transaction.findOne(searchCriterion).exec()
-    console.log('transaction:', transaction)
     return transaction
       ? res.status(200).json(transaction)
       : res.status(404).json({ message: 'Find transaction failed.' })
   } catch (err) {
-    console.log(err)
+    logger.error(`getTransaction: ${err}`)
   }
 }
 
-export const updateTransaction = async (
-  req: Request,
-  res: Response,
-) => {
+export const updateTransaction = async (req: Request, res: Response) => {
   try {
-    console.log('UPDATE TRANSACTION IN DATABASE')
+    logger.verbose('updateTransaction: UPDATE TRANSACTION IN DATABASE')
     const searchCriterion = { _id: req.params.id }
     await Transaction.updateOne(searchCriterion, req.body.transaction)
     const updatedTransaction = await Transaction.find(searchCriterion).exec()
     return res.status(200).json(updatedTransaction)
   } catch (err) {
-    console.log(err)
+    logger.error(`updateTransaction: ${err}`)
   }
 }
 
-export const deleteTransaction = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const deleteTransaction = async (req: Request, res: Response) => {
   try {
-    console.log('DELETE TRANSACTION IN DATABASE')
+    logger.verbose('deleteTransaction: ELETE TRANSACTION IN DATABASE')
     const searchCriterion = {
       _id: req.params.id,
     }
     const deletedTransaction = await Transaction.deleteOne(searchCriterion)
     return res.status(200).json(deletedTransaction)
   } catch (err) {
-    console.log(err)
+    logger.error(`deleteTransaction: ${err}`)
   }
 }
 
-export const getTransactionUsers = async (
-  req: Request,
-  res: Response,
-) => {
+export const getTransactionUsers = async (req: Request, res: Response) => {
   try {
-    console.log('GET TRANSACTION USERS FROM DATABASE:')
-    const transactionWithUsers = await aggregateTransactions(req.body.transaction_id)
+    logger.verbose('getTransactionUsers: GET TRANSACTION USERS FROM DATABASE:')
+    const transactionWithUsers = await aggregateTransactions(
+      req.body.transaction_id,
+    )
     return transactionWithUsers
       ? res.status(200).json(transactionWithUsers)
       : res.status(404).json({ message: 'No transactions aggregated.' })
   } catch (err) {
-    console.log(err)
+    logger.error(`getTransactionUsers: ${err}`)
   }
 }
 
@@ -124,8 +107,10 @@ export const getTransactionExpiration = async (
   res: undefined,
   next: NextFunction,
 ) => {
-  console.log('GET USER REQUESTS EXPIRATION FROM DATABASE:')
-  console.log('– GET USER REQUESTS')
+  logger.verbose(
+    'getTransactionExpiration: GET USER REQUESTS EXPIRATION FROM DATABASE:',
+  )
+  logger.verbose('getTransactionExpiration: – GET USER REQUESTS')
   try {
     const requests = await Transaction.aggregate([
       {
@@ -138,19 +123,27 @@ export const getTransactionExpiration = async (
     ]).exec()
 
     if (requests) {
-      console.log('– GET REQUEST CREATION DATES (ITERATION):')
+      logger.verbose(
+        'getTransactionExpiration: – GET REQUEST CREATION DATES (ITERATION):',
+      )
       requests.forEach((request: any) => {
         // TODO typing
         const dateCreated = new Date(request.created)
-        console.log('–– COMPARE REQUEST CREATION DATE AND EXPIRATION OFFSET:')
+        logger.verbose(
+          'getTransactionExpiration: –– COMPARE REQUEST CREATION DATE AND EXPIRATION OFFSET:',
+        )
         const expirationOffset = 5
         const expirationDate = new Date(
           dateCreated.setUTCDate(dateCreated.getUTCDate() + expirationOffset),
         )
         if (expirationDate.getTime() < new Date().getTime()) {
-          console.log('––– SET EXPIRED TRANSACTION STATUS TO "EXPIRED"')
+          logger.verbose(
+            'getTransactionExpiration: ––– SET EXPIRED TRANSACTION STATUS TO "EXPIRED"',
+          )
           updateTransaction(request._id)
-          console.log('––– REBATE KOKANS TO REQUESTER')
+          logger.verbose(
+            'getTransactionExpiration: ––– REBATE KOKANS TO REQUESTER',
+          )
           updateUser(request.requester, request.kokans)
         }
       })
@@ -158,37 +151,36 @@ export const getTransactionExpiration = async (
 
     async function updateTransaction(id: string) {
       try {
-        console.log('-> SET TRANSACTION STATUS TO "EXPIRED"')
+        logger.verbose(
+          'getTransactionExpiration -> updateTransaction: SET TRANSACTION STATUS TO "EXPIRED"',
+        )
         const searchCriterion = { _id: id }
-        const res = await Transaction.updateOne(searchCriterion, {
+        await Transaction.updateOne(searchCriterion, {
           status: 'expired',
         })
-        if (res) console.log('SUCCESS')
         return
       } catch (err) {
-        console.log('X FAILURE')
-        console.log(err)
+        logger.error(`getTransactionExpiration -> updateTransaction: ${err}`)
       }
     }
 
     async function updateUser(id: string, rebate: number) {
       try {
-        console.log('-> REBATE USER KOKANS')
+        logger.verbose(
+          'getTransactionExpiration -> updateUser: REBATE USER KOKANS',
+        )
         const searchCriterion = { _id: id }
-        const res = await User.updateOne(searchCriterion, {
+        await User.updateOne(searchCriterion, {
           $inc: { kokans: rebate, kokans_pending: -rebate },
         }).exec()
-        if (res) console.log('SUCCESS')
         return
       } catch (err) {
-        console.log('X FAILURE')
-        console.log(err)
+        logger.error(`getTransactionExpiration -> updateUser: ${err}`)
       }
     }
     next()
   } catch (err) {
-    console.log('X FAILURE')
-    console.log(err)
+    logger.error(`getTransactionUsers: ${err}`)
     next(err)
   }
 }
