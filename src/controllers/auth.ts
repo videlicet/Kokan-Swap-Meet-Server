@@ -13,7 +13,8 @@ import User from '../models/userModel.js'
 
 /* types  */
 interface AccessToken {
-  access_token: string
+  gitHub_token: string
+  access_token?: string
 }
 
 /* mongoose */
@@ -34,8 +35,8 @@ export const loginUser = async (req: Request, res: Response) => {
   const passwordCorrect = await bcrypt.compare(req.body.password, user.password)
   logger.verbose('loginUser: – CHECK PASSWORD')
   if (user && passwordCorrect == true) {
-    /* create access token*/
-    let accessToken = jwt.sign(
+    /* create kokan access token*/
+    const accessToken = jwt.sign(
       { username: req.body.username },
       process.env.SECRET_KEY,
     )
@@ -48,7 +49,7 @@ export const loginUser = async (req: Request, res: Response) => {
     }
     return res
       .status(200)
-      .cookie('token', accessToken, options)
+      .cookie('kokan_token', accessToken, options)
       .json({ message: 'Password correct.' })
   } else {
     logger.error('loginUser: – CHECK PASSWORD: FAILED')
@@ -59,8 +60,8 @@ export const loginUser = async (req: Request, res: Response) => {
 export const logoutUser = async (req: Request, res: Response) => {
   logger.verbose('logoutUser: CLEAR COOKIE')
   return res
-    .clearCookie('token', { path: '/', sameSite: 'none', secure: true })
-    .clearCookie('access_token', {
+    .clearCookie('kokan_token', { path: '/', sameSite: 'none', secure: true })
+    .clearCookie('gitHub_token', {
       path: '/',
       sameSite: 'none',
       secure: true,
@@ -88,12 +89,12 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
         },
       },
     )
-    let accessToken = await authentictor.json()
+    let gitHub_token = await authentictor.json()
     logger.verbose('getGitHubAccessToken: – JWT SIGN GITHUB ACCESS TOKEN')
 
     /* jwt sign GitHub access token  */
-    accessToken = jwt.sign(
-      { access_token: (accessToken as AccessToken).access_token },
+    gitHub_token = jwt.sign(
+      { gitHub_token: (gitHub_token as AccessToken).access_token },
       process.env.SECRET_KEY,
     )
 
@@ -103,10 +104,11 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: true,
       sameSite: 'none' as const, // as const necessary because sameSite is not included on the CookieOptions type
+      maxAge: 3600000
     }
     return res
       .status(200)
-      .cookie('access_token', 'Bearer ' + accessToken, options)
+      .cookie('gitHub_token', 'Bearer ' + gitHub_token, options)
       .send()
   } catch (err) {
     logger.error(`getGitHubAccessToken: ${err}`)
@@ -116,12 +118,12 @@ export const getGitHubAccessToken = async (req: Request, res: Response) => {
 
 export const getGitHubUser = async (req: Request, res: Response) => {
   logger.verbose('getGitHubUser: GET GITHUB USER:')
-  /* verify and decode gitHub access_token cookie and call gitHub API if successful */
+  /* verify and decode gitHub gitHub_token cookie and call gitHub API if successful */
   logger.verbose('getGitHubUser: – VERIFY GITHUB JWT ACCESS TOKEN')
-  const key = req.cookies.access_token.slice(7)
+  const key = req.cookies.gitHub_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
   const octokit = new Octokit({
-    auth: (decoded as AccessToken).access_token,
+    auth: (decoded as AccessToken).gitHub_token,
   })
   logger.verbose(`getGitHubUser: GET GITHUB USER FROM GITHUB`)
   try {
@@ -143,14 +145,14 @@ export const getGitHubUser = async (req: Request, res: Response) => {
 
 export const addGitHubCollaborator = async (req: Request, res: Response) => {
   logger.verbose('addGitHubCollborator: ADD COLLABORATOR TO GITHUB REPO:')
-  /* verify and decode gitHub access_token cookie */
+  /* verify and decode gitHub gitHub_token cookie */
   logger.verbose('addGitHubCollborator: – VERIFY GITHUB JWT ACCESS TOKEN')
-  const key = req.cookies.access_token.slice(7)
+  const key = req.cookies.gitHub_token.slice(7)
   const decoded = jwt.verify(key, process.env.SECRET_KEY)
 
   /* add collaborator to GitHub Repo*/
   const octokit = new Octokit({
-    auth: (decoded as AccessToken).access_token,
+    auth: (decoded as AccessToken).gitHub_token,
   })
   logger.verbose('addGitHubCollborator: – ADD COLLABORATOR TO GITHUB REPO')
   try {
@@ -174,10 +176,10 @@ export const addGitHubCollaborator = async (req: Request, res: Response) => {
 export const getRepository = async (req: Request, res: Response) => {
   logger.verbose('getRepository: CHECK IF REPOSITORY EXISTS')
   try {
-    const key = req.cookies.access_token.slice(7)
+    const key = req.cookies.gitHub_token.slice(7)
     const decoded = jwt.verify(key, process.env.SECRET_KEY)
     const octokit = new Octokit({
-      auth: (decoded as AccessToken).access_token,
+      auth: (decoded as AccessToken).gitHub_token,
     })
     await octokit.request('GET /repos/{owner}/{repo}', {
       owner: req.body.owner,

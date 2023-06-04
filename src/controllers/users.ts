@@ -43,7 +43,6 @@ export const createUser = async (
   try {
     logger.verbose('createUser: CREATE USER IN DATABASE')
     const password = await bcrypt.hash(req.body.password, 10)
-
     const newUser = new User({
       _id: new mongoose.Types.ObjectId(),
       username: req.body.username,
@@ -92,7 +91,8 @@ export const checkUserExists = async (req: Request, res: Response) => {
       { username: req.params.id },
       '-_id username',
     ).exec()
-    return Object.keys(user).length !== 0
+    if (user === null) return res.status(404).json({ message: 'No user found.' })
+    return user != null || Object.keys(user).length !== 0
       ? res.status(200).json({ message: 'User found.' })
       : res.status(404).json({ message: 'No user found.' })
   } catch (err) {

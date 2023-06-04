@@ -12,7 +12,7 @@ interface JwtPayload {
 }
 
 interface AccessToken {
-  access_token: string
+  gitHub_token: string
 }
 
 interface AuthRequest extends Request {
@@ -25,7 +25,7 @@ export const JWTAuthentication = async (
   next: NextFunction,
 ) => {
   logger.verbose('JWTAutentication: VERIFY KOKAN JWT ACCESS TOKEN')
-  const key = req.cookies.token
+  const key = req.cookies.kokan_token
   if (!key) {
     logger.error('JWTAutentication: NO KOKAN JWT ACCESS TOKEN PRESENT')
     res.status(403).json({ message: 'No kokan JWT access token present.' })
@@ -53,15 +53,15 @@ export const gitHubAuthentication = async (
   next: NextFunction,
 ) => {
   logger.verbose('gitHubAuthentication: VERIFY GITHUB JWT ACCESS TOKEN')
-  if (!req.cookies.access_token) {
+  if (!req.cookies.gitHub_token) {
     logger.error('gitHubAuthentication: NO GITHUB JWT ACCESS TOKEN PRESENT')
     res.status(403).json({ message: 'No GitHub JWT access token present.' })
   } else {
-    /* verify and decode gitHub access_token cookie and call gitHub API if successful */
-    const key = req.cookies.access_token.slice(7)
+    /* verify and decode gitHub gitHub_token cookie and call gitHub API if successful */
+    const key = req.cookies.gitHub_token.slice(7)
     const decoded = jwt.verify(key, process.env.SECRET_KEY)
     const octokit = new Octokit({
-      auth: (decoded as AccessToken).access_token, // TODO typing
+      auth: (decoded as AccessToken).gitHub_token, // TODO typing
     })
     try {
       await octokit.request('GET /user', {

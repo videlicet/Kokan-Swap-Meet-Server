@@ -24,8 +24,8 @@ const port = process.env.PORT || 3532
 /* middlewares */
 app.use(
   expressWinston.logger({
-    transports: [new winston.transports.Console()],
     format: format,
+    transports: [new winston.transports.Console()],
   }),
 )
 app.use(cors({ credentials: true, origin: true }))
