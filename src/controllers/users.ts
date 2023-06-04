@@ -66,6 +66,25 @@ export const createUser = async (
   }
 }
 
+export const updateUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    logger.verbose('updateUsers: UPDATE USERS IN DB')
+    const searchCriterion = req.body.users
+    const changes = req.body.update.changes
+    const result = await User.updateMany(searchCriterion, changes)
+    return Object.keys(result).length !== 0
+      ? res.status(200).send('Update successful.')
+      : res.status(400).send('Update failed.')
+  } catch (err) {
+    logger.error(`updateUsers: ${err}`)
+    next(err)
+  }
+}
+
 export const checkUserExists = async (req: Request, res: Response) => {
   logger.verbose('checkUserExists: GET USER FROM DATABASE')
   try {

@@ -104,7 +104,7 @@ export const getTransactionUsers = async (req: Request, res: Response) => {
 
 export const getTransactionExpiration = async (
   req: Request,
-  res: undefined,
+  res: Response,
   next: NextFunction,
 ) => {
   logger.verbose(

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, createUser, checkUserExists, getUser, updateUser, deleteUser, getUserAssets, getUserRequests } from '../controllers/users.js'
+import { getUsers, createUser, updateUsers, checkUserExists, getUser, updateUser, deleteUser, getUserAssets, getUserRequests } from '../controllers/users.js'
 import { JWTAuthentication, gitHubAuthentication } from '../middlewares/authentication.js'
 import {getTransactionExpiration} from '../controllers/transactions.js'
 
@@ -10,6 +10,7 @@ usersRouter.use(gitHubAuthentication)
 usersRouter.route('/')
     .get(JWTAuthentication, getUsers)
     .post(createUser)
+    .put(JWTAuthentication, updateUsers)
 
 usersRouter.route('/:id')
     .get(checkUserExists)
