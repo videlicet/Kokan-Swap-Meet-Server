@@ -1,10 +1,10 @@
 # Koukan – Digital Assets Swap-Meet
 
-Exchange digital assets.
+The Kokan web-app extends GitHub with a swap-meet for digital assets.
 
 ## General
 
-Kokan is an online swap meet for digital assets. This repo containes the server for the Kokan-App Frontend (see [GitHub repository](https://github.com/videlicet/Kokan-Swap-Meet)).
+This repo contains the server for the Kokan-App Frontend (see [GitHub repository](https://github.com/videlicet/Kokan-Swap-Meet)). Please check out the README and IMPROVEMENT files for more information on the server.
 
 ## Stack
 
