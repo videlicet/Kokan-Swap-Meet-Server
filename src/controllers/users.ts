@@ -91,7 +91,8 @@ export const checkUserExists = async (req: Request, res: Response) => {
       { username: req.params.id },
       '-_id username',
     ).exec()
-    if (user === null) return res.status(404).json({ message: 'No user found.' })
+    if (user === null)
+      return res.status(404).json({ message: 'No user found.' })
     return user != null || Object.keys(user).length !== 0
       ? res.status(200).json({ message: 'User found.' })
       : res.status(404).json({ message: 'No user found.' })
@@ -156,24 +157,47 @@ export const deleteUser = async (
 ) => {
   try {
     logger.verbose('deleteUser: DELETE USER IN DATABASE:')
+    /* refund pending incoming transactions */
+    logger.verbose('deleteUser: REFUND PENDING INCOMING TRANSACTIONS')
+    const pendingIncomingTransactions = await Transaction.find({
+      requestee: {
+        $size: 1,
+        $all: [req.body.user._id],
+      },
+      status: 'pending',
+    }).exec()
+    pendingIncomingTransactions.map(
+      async (transaction) =>
+        await User.updateOne(
+          { _id: transaction.requester },
+          {
+            $inc: {
+              kokans: transaction.kokans,
+              kokans_pending: -transaction.kokans,
+            },
+          },
+        ),
+    )
+
     /* delete corresponding transcations */
     logger.verbose('deleteUser: – DELETE CORRESPONDING TRANSACTIONS')
     await Transaction.deleteMany({
       requestee: req.body.user._id,
-    })
+    }).exec()
     await Transaction.deleteMany({
       requester: req.body.user._id,
-    })
+    }).exec()
 
     /* delete/update corresponidng assets */
     logger.verbose('deleteUser: – DELETE/UPDATE CORRESPONDING ASSETS')
     await Asset.deleteMany({
       owners: [req.body.user._id],
-    })
+    }).exec()
     await Asset.updateMany(
       { owners: req.body.user._id },
       { $pull: { owners: req.body.user._id } },
-    )
+    ).exec()
+
     /* delete user */
     logger.verbose('deleteUser: – DELETE USER IN DATABASE')
     const deletedUser = await User.deleteOne({ _id: req.body.user._id })
