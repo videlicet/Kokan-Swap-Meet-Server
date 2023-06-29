@@ -25,7 +25,12 @@ export const getUsers = async (
 ) => {
   try {
     logger.verbose('getUsers: GET USERS IN DATABASE')
-    const users = await User.find({}).exec()
+    const username = req.query.query
+    const users = await User.find({
+      username: { $regex: username, $options: 'i' },
+    })
+      .sort({ username: -1 })
+      .exec()
     return users
       ? res.status(200).json(users)
       : res.status(404).send('No users found.')
