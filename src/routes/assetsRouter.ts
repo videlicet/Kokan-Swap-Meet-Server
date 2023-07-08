@@ -11,17 +11,8 @@ assetsRouter.route('/')
     .delete(deleteAssets)
 
 assetsRouter.route('/:id')
-    .post( function (req, res, next) {
-        /* change controller depending on parameter */
-        switch(req.params.id) {
-            case 'search':
-                getSearchedAssets(req, res, next)
-                break;
-            default:
-                getAsset(req, res, next)
-                break;
-          }
-    })
+    .get(getSearchedAssets)
+    .post(getAsset)
     .put(updateAsset)
     .delete(deleteAsset)
 

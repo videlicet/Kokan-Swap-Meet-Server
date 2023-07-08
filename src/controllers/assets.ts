@@ -114,25 +114,35 @@ export const getSearchedAssets = async (
 ) => {
   logger.verbose('getSearchedAssets: SEARCH ASSETS IN DATABASE')
   try {
-    let assets = await Asset.find({
-      $or: [
-        { title: { $regex: req.body.asset.searchTerm, $options: 'i' } },
-        {
-          description_short: {
-            $regex: req.body.asset.searchTerm,
-            $options: 'i',
+    const searchTerm = req.query.query
+    const searchPages = req.query.pages // TODO for later implementation
+    const searchTags = req.query.tags
+    let assets
+    if (searchTags == 'assets') {
+      assets = await Asset.find({
+        $or: [
+          { title: { $regex: searchTerm, $options: 'i' } },
+          {
+            description_short: {
+              $regex: searchTerm,
+              $options: 'i',
+            },
           },
-        },
-        {
-          description_long: {
-            $regex: req.body.asset.searchTerm,
-            $options: 'i',
+          {
+            description_long: {
+              $regex: searchTerm,
+              $options: 'i',
+            },
           },
-        },
-      ],
-    })
-      .sort({ created: -1 })
-      .exec()
+        ],
+      })
+        .sort({ created: -1 })
+        .exec()
+    } else if (searchTags == 'tags') {
+      assets = await Asset.find({ tags: { $regex: searchTerm, $options: 'i' } })
+        .sort({ created: -1 })
+        .exec()
+    }
     return Object.keys(assets).length > 0
       ? res.status(200).json(assets)
       : res.status(400).json({ message: 'No assets found.' })
